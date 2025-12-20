@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "apikeyrouter-proxy"
+version = "0.1.0"
+description = "FastAPI proxy service for API key routing"
+authors = []
+readme = "README.md"
+packages = [{include = "apikeyrouter_proxy"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+apikeyrouter-core = {path = "../core", develop = true}
+fastapi = "^0.109.0"
+uvicorn = {extras = ["standard"], version = "^0.27.0"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+
+
