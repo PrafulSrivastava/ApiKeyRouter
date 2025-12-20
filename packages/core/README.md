@@ -91,6 +91,10 @@ if __name__ == "__main__":
 
 ## 📖 Documentation
 
+### API Reference
+
+**👉 [API_REFERENCE.md](./API_REFERENCE.md)** - **Start here!** Clean, simple API documentation that abstracts all complexity. Shows only what you need to use the library.
+
 ### Core Concepts
 
 #### 1. **ApiKeyRouter** - Main Entry Point
