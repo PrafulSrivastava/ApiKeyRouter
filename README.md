@@ -214,6 +214,27 @@ The proxy service provides:
 - `uvicorn` - ASGI server
 - `apikeyrouter-core` - Core library (local dependency)
 
+## Security
+
+### Reporting Security Issues
+
+**Please do not report security vulnerabilities through public GitHub issues.**
+
+Instead, please report them via email to [security@example.com] or see [SECURITY.md](SECURITY.md) for details.
+
+### Security Practices
+
+- **Dependency Scanning**: Automated vulnerability scanning runs on every commit
+- **Static Analysis**: Bandit scans code for security issues
+- **Secret Scanning**: Automated secret scanning prevents accidental commits
+- **Dependabot**: Automated security updates for dependencies
+- **Security Headers**: All API responses include security headers
+- **Encryption**: API keys encrypted at rest using AES-256
+- **Input Validation**: All inputs validated to prevent injection attacks
+- **Audit Logging**: All security events logged
+
+See [SECURITY.md](SECURITY.md) for detailed security information.
+
 ## Contributing
 
 See `CONTRIBUTING.md` for contribution guidelines.

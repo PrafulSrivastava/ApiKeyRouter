@@ -12,6 +12,40 @@ from apikeyrouter.domain.interfaces.observability_manager import (
 )
 
 
+def sanitize_for_logging(data: Any) -> Any:
+    """Sanitize data to remove sensitive information before logging.
+
+    Removes key_material fields from dictionaries and nested structures
+    to prevent accidental logging of sensitive data.
+
+    Args:
+        data: Data structure to sanitize (dict, list, or primitive).
+
+    Returns:
+        Sanitized data structure with key_material fields removed.
+    """
+    if isinstance(data, dict):
+        sanitized = {}
+        for key, value in data.items():
+            # Skip key_material fields
+            if key == "key_material":
+                sanitized[key] = "[REDACTED]"
+            else:
+                # Recursively sanitize nested structures
+                sanitized[key] = sanitize_for_logging(value)
+        return sanitized
+    elif isinstance(data, list):
+        return [sanitize_for_logging(item) for item in data]
+    elif isinstance(data, str):
+        # Check if string looks like an API key (starts with common prefixes)
+        # This is a safety check, but primary protection is removing key_material fields
+        if data.startswith(("sk-", "pk-", "xai-", "claude-", "anthropic-")):
+            # Only redact if it's a reasonable length (not just a prefix match)
+            if len(data) > 20:  # API keys are typically longer
+                return "[REDACTED]"
+    return data
+
+
 class DefaultObservabilityManager(ObservabilityManager):
     """Default implementation of ObservabilityManager using structlog with JSON format.
 
@@ -77,14 +111,18 @@ class DefaultObservabilityManager(ObservabilityManager):
             ObservabilityError: If event emission fails.
         """
         try:
+            # Sanitize payload and metadata to remove sensitive data
+            sanitized_payload = sanitize_for_logging(payload)
+            
             # Merge metadata into event data
             event_data = {
-                **payload,
+                **sanitized_payload,
             }
             if metadata:
-                event_data["metadata"] = metadata
+                sanitized_metadata = sanitize_for_logging(metadata)
+                event_data["metadata"] = sanitized_metadata
                 # Add timestamp if not present
-                if "timestamp" not in metadata:
+                if "timestamp" not in sanitized_metadata:
                     event_data["metadata"]["timestamp"] = datetime.utcnow().isoformat()
 
             self._logger.info(
@@ -112,11 +150,17 @@ class DefaultObservabilityManager(ObservabilityManager):
             ObservabilityError: If logging fails.
         """
         try:
+            # Sanitize context to remove sensitive data
+            sanitized_context = sanitize_for_logging(context) if context else None
+            
+            # Sanitize message string as well
+            sanitized_message = sanitize_for_logging(message)
+            
             log_method = getattr(self._logger, level.lower(), self._logger.info)
-            if context:
-                log_method(message, **context)
+            if sanitized_context:
+                log_method(sanitized_message, **sanitized_context)
             else:
-                log_method(message)
+                log_method(sanitized_message)
         except Exception as e:
             raise ObservabilityError(f"Failed to log message: {e}") from e
 

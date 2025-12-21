@@ -18,6 +18,10 @@ redis = {extras = ["hiredis"], version = "^5.0.1"}
 cryptography = "^42.0.0"
 typing-extensions = "^4.9.0"
 
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv", "htmlcov", "__pycache__", ".pytest_cache"]
+skips = ["B101", "B601"]  # Skip assert_used and shell_injection_subprocess
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

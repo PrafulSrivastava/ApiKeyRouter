@@ -1,0 +1,152 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  dependency-scanning:
+    name: Dependency Vulnerability Scanning
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ["core", "proxy"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.7.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Export dependencies to requirements.txt
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          poetry export --format requirements.txt --output requirements.txt --without-hashes || poetry export --output requirements.txt --without-hashes
+
+      - name: Run pip-audit
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          pip-audit --requirement requirements.txt --format json --output audit-report-${{ matrix.package }}.json || true
+          pip-audit --requirement requirements.txt --format text || true
+
+      - name: Check for high/critical vulnerabilities
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          # Run pip-audit and capture output
+          pip-audit --requirement requirements.txt --format text || true
+          # Check for critical or high severity in JSON output
+          JSON_OUTPUT=$(pip-audit --requirement requirements.txt --format json 2>/dev/null || echo "{}")
+          if echo "$JSON_OUTPUT" | grep -q '"severity": "CRITICAL"\|"severity": "HIGH"'; then
+            echo "❌ High or critical vulnerabilities found!"
+            pip-audit --requirement requirements.txt --format text
+            exit 1
+          else
+            echo "✅ No high/critical vulnerabilities found"
+          fi
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-${{ matrix.package }}-${{ github.sha }}
+          path: packages/${{ matrix.package }}/audit-report-${{ matrix.package }}.json
+          retention-days: 30
+
+  bandit-scanning:
+    name: Static Analysis Security Scanning (Bandit)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ["core", "proxy"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.7.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Run Bandit
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          bandit -r apikeyrouter* -f json -o bandit-report-${{ matrix.package }}.json || true
+          bandit -r apikeyrouter* -f txt || true
+
+      - name: Check for high severity issues
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          # Run Bandit and check for high severity issues
+          bandit -r apikeyrouter* -ll > bandit-output.txt 2>&1 || true
+          if grep -q "Severity: High" bandit-output.txt; then
+            echo "High severity security issues found!"
+            cat bandit-output.txt
+            exit 1
+          fi
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report-${{ matrix.package }}-${{ github.sha }}
+          path: packages/${{ matrix.package }}/bandit-report-${{ matrix.package }}.json
+          retention-days: 30
+
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for secrets
+        run: |
+          # Additional check for common secret patterns
+          if grep -r "sk-[a-zA-Z0-9]{32,}" --include="*.py" --include="*.md" --include="*.yaml" --include="*.yml" . | grep -v ".git" | grep -v "test_" | grep -v "example" | grep -v "docs"; then
+            echo "Potential secrets found in code!"
+            exit 1
+          fi
+

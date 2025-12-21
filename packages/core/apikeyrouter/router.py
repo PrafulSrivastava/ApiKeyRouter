@@ -29,6 +29,10 @@ from apikeyrouter.infrastructure.observability.logger import (
     DefaultObservabilityManager,
 )
 from apikeyrouter.infrastructure.state_store.memory_store import InMemoryStateStore
+from apikeyrouter.infrastructure.utils.validation import (
+    ValidationError,
+    validate_request_intent,
+)
 
 
 class ApiKeyRouter:
@@ -504,6 +508,12 @@ class ApiKeyRouter:
             raise ValueError(
                 f"request_intent must be RequestIntent or dict, got {type(request_intent)}"
             )
+
+        # Validate RequestIntent using validation utilities
+        try:
+            validate_request_intent(request_intent)
+        except ValidationError as e:
+            raise ValueError(f"Request validation failed: {e}") from e
 
         # Normalize objective
         if objective is None:

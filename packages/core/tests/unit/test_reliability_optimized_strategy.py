@@ -155,7 +155,7 @@ async def test_calculate_success_rate_zero_usage(
     key = APIKey(
         id="key_new",
         provider_id="openai",
-        key_material="test",
+        key_material="sk-test-key-extra",
         state=KeyState.Available,
         usage_count=0,
         failure_count=0,
@@ -181,7 +181,7 @@ async def test_get_key_state_score_throttled_lower(
     key = APIKey(
         id="key_throttled",
         provider_id="openai",
-        key_material="test",
+        key_material="sk-test-key-extra",
         state=KeyState.Throttled,
     )
     score = reliability_strategy._get_key_state_score(key)
@@ -250,7 +250,7 @@ async def test_score_keys_penalizes_recent_failures(
     high_failure_key = APIKey(
         id="key_high_failure",
         provider_id="openai",
-        key_material="test",
+        key_material="sk-test-key-extra",
         state=KeyState.Available,
         usage_count=10,
         failure_count=10,  # 50% failure rate
@@ -260,7 +260,7 @@ async def test_score_keys_penalizes_recent_failures(
     low_failure_key = APIKey(
         id="key_low_failure",
         provider_id="openai",
-        key_material="test",
+        key_material="sk-test-key-extra",
         state=KeyState.Available,
         usage_count=100,
         failure_count=5,  # 5% failure rate
@@ -449,7 +449,7 @@ async def test_score_keys_handles_zero_usage_gracefully(
     key = APIKey(
         id="key_new",
         provider_id="openai",
-        key_material="test",
+        key_material="sk-test-key-extra",
         state=KeyState.Available,
         usage_count=0,
         failure_count=0,

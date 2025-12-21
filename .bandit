@@ -1,0 +1,5 @@
+[bandit]
+# Bandit configuration for security scanning
+exclude_dirs = tests,venv,.venv,htmlcov,__pycache__,.pytest_cache
+skips = B101,B601  # Skip assert_used and shell_injection_subprocess (tests use asserts, subprocess is safe)
+

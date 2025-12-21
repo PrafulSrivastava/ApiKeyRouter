@@ -13,7 +13,14 @@ from apikeyrouter.domain.models.api_key import APIKey, KeyState
 from apikeyrouter.domain.models.state_transition import StateTransition
 from apikeyrouter.infrastructure.utils.encryption import (
     EncryptionError,
-    encrypt_key_material,
+    EncryptionService,
+    encrypt_key_material,  # Backward compatibility
+)
+from apikeyrouter.infrastructure.utils.validation import (
+    ValidationError,
+    validate_key_material,
+    validate_metadata,
+    validate_provider_id,
 )
 
 
@@ -71,6 +78,7 @@ class KeyManager:
         state_store: StateStore,
         observability_manager: ObservabilityManager,
         default_cooldown_seconds: int = 60,
+        encryption_service: EncryptionService | None = None,
     ) -> None:
         """Initialize KeyManager with dependencies.
 
@@ -78,10 +86,23 @@ class KeyManager:
             state_store: StateStore implementation for persistence.
             observability_manager: ObservabilityManager for events and logging.
             default_cooldown_seconds: Default cooldown period for Throttled state.
+            encryption_service: Optional EncryptionService instance. If None, creates one
+                using environment variable or settings.
         """
         self._state_store = state_store
         self._observability = observability_manager
         self._default_cooldown_seconds = default_cooldown_seconds
+
+        # Initialize EncryptionService
+        if encryption_service is None:
+            try:
+                self._encryption_service = EncryptionService()
+            except EncryptionError as e:
+                raise KeyRegistrationError(
+                    f"Failed to initialize encryption service: {e}"
+                ) from e
+        else:
+            self._encryption_service = encryption_service
 
     async def register_key(
         self,
@@ -106,18 +127,23 @@ class KeyManager:
             KeyRegistrationError: If registration fails (encryption error,
                 StateStore error, invalid provider_id).
         """
-        if not key_material or not key_material.strip():
-            raise KeyRegistrationError("Key material cannot be empty")
-
-        if not provider_id or not provider_id.strip():
-            raise KeyRegistrationError("Provider ID cannot be empty")
+        # Validate inputs using validation utilities
+        try:
+            validate_key_material(key_material)
+            validate_provider_id(provider_id)
+            if metadata:
+                validate_metadata(metadata)
+        except ValidationError as e:
+            raise KeyRegistrationError(f"Validation failed: {e}") from e
 
         # Generate stable key_id using UUID
         key_id = str(uuid.uuid4())
 
         try:
-            # Encrypt key material before storage
-            encrypted_key_material = encrypt_key_material(key_material.strip())
+            # Encrypt key material before storage using EncryptionService
+            # Fernet.encrypt() returns base64-encoded bytes, so we just decode to string
+            encrypted_bytes = self._encryption_service.encrypt(key_material.strip())
+            encrypted_key_material = encrypted_bytes.decode('utf-8')
         except EncryptionError as e:
             raise KeyRegistrationError(
                 f"Failed to encrypt key material: {e}"
@@ -523,9 +549,13 @@ class KeyManager:
         if old_key is None:
             raise KeyNotFoundError(f"Key not found: {old_key_id}")
 
-        # Encrypt new key_material
+        # Encrypt new key_material using EncryptionService
         try:
-            encrypted_new_material = encrypt_key_material(new_key_material.strip())
+            encrypted_bytes = self._encryption_service.encrypt(new_key_material.strip())
+            # Store as base64-encoded string for compatibility with APIKey model
+            from base64 import b64encode
+
+            encrypted_new_material = b64encode(encrypted_bytes).decode()
         except EncryptionError as e:
             raise KeyRegistrationError(
                 f"Failed to encrypt new key material: {e}"
@@ -600,4 +630,83 @@ class KeyManager:
             )
 
         return rotated_key
+
+    async def get_key_material(self, key_id: str) -> str:
+        """Get decrypted key material for an API key.
+
+        Decrypts the key material on demand. The decrypted key is returned
+        but not stored in memory longer than necessary. Logs an audit event
+        for key access.
+
+        Args:
+            key_id: The unique identifier of the key.
+
+        Returns:
+            Decrypted plain text API key material.
+
+        Raises:
+            KeyNotFoundError: If key is not found.
+            EncryptionError: If decryption fails.
+        """
+        # Retrieve key from StateStore
+        key = await self._state_store.get_key(key_id)
+        if key is None:
+            raise KeyNotFoundError(f"Key not found: {key_id}")
+
+        try:
+            # Decrypt key material on demand
+            # Fernet tokens are already base64-encoded, so we just encode the string to bytes
+            from datetime import datetime
+
+            encrypted_bytes = key.key_material.encode('utf-8')
+            decrypted_material = self._encryption_service.decrypt(encrypted_bytes)
+            
+            # Log audit event for key access (decryption)
+            try:
+                await self._observability.emit_event(
+                    event_type="key_access",
+                    payload={
+                        "key_id": key_id,
+                        "provider_id": key.provider_id,
+                        "operation": "decrypt",
+                        "result": "success",
+                    },
+                    metadata={
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "access_type": "key_material_decryption",
+                    },
+                )
+            except Exception as e:
+                # Log error but don't fail key access if audit logging fails
+                await self._observability.log(
+                    level="WARNING",
+                    message=f"Failed to emit key_access audit event: {e}",
+                    context={"key_id": key_id},
+                )
+            
+            return decrypted_material
+        except EncryptionError as e:
+            # Log failed access attempt
+            try:
+                await self._observability.emit_event(
+                    event_type="key_access",
+                    payload={
+                        "key_id": key_id,
+                        "provider_id": key.provider_id,
+                        "operation": "decrypt",
+                        "result": "failure",
+                        "error": str(e),
+                    },
+                    metadata={
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "access_type": "key_material_decryption",
+                    },
+                )
+            except Exception:
+                # Ignore audit logging errors for failed access
+                pass
+            
+            raise EncryptionError(
+                f"Failed to decrypt key material for key {key_id}: {e}"
+            ) from e
 

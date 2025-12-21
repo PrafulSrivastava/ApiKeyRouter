@@ -40,5 +40,11 @@ def ensure_encryption_key():
         os.environ["APIKEYROUTER_ENCRYPTION_KEY"] = test_key.decode()
 
 
-
+# Import test fixtures to make them available globally (optional - may fail if optional deps missing)
+try:
+    from .fixtures import test_data  # noqa: F401, E402
+except ImportError:
+    # Fixtures may not be available if optional dependencies (motor, etc.) are missing
+    # This is fine - tests that need fixtures can import them directly
+    pass
 

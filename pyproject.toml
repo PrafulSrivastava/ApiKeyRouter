@@ -1,9 +1,12 @@
-[tool.poetry]
+[project]
 name = "apikeyrouter"
 version = "0.1.0"
 description = "Intelligent API key routing library and proxy"
-authors = []
 readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.poetry]
 package-mode = false
 
 [tool.poetry.dependencies]
@@ -17,6 +20,7 @@ pytest-asyncio = "^0.23.0"
 ruff = "^0.1.13"
 mypy = "^1.8.0"
 pre-commit = "^3.6.0"
+locust = "^2.24.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -41,6 +45,13 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod",
 ]
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = true
+fail_under = 80
+# Note: Per-module thresholds (90% for domain logic) should be enforced
+# via CI/CD pipeline or coverage tooling that supports module-level thresholds
 
 [tool.coverage.html]
 directory = "htmlcov"
@@ -120,4 +131,30 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = ["packages/core/tests", "packages/proxy/tests"]
+asyncio_mode = "auto"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "-ra",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "benchmark: Performance benchmark tests",
+    "e2e: End-to-end tests",
+    "slow: Slow running tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
 

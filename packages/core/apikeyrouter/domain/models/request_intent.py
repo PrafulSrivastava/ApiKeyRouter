@@ -134,7 +134,10 @@ class RequestIntent(BaseModel):
         """Validate model identifier."""
         if not v or not v.strip():
             raise ValueError("Model identifier cannot be empty")
-        return v.strip()
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("Model identifier must be 200 characters or less")
+        return v
 
     @field_validator("messages")
     @classmethod
@@ -142,6 +145,31 @@ class RequestIntent(BaseModel):
         """Validate messages list."""
         if not v:
             raise ValueError("Messages list cannot be empty")
+        if len(v) > 1000:
+            raise ValueError("Messages list cannot contain more than 1000 messages")
+        return v
+
+    @field_validator("parameters", mode="before")
+    @classmethod
+    def validate_parameters(cls, v: dict[str, Any] | None) -> dict[str, Any]:
+        """Validate parameters dictionary."""
+        if v is None:
+            return {}
+        if not isinstance(v, dict):
+            raise ValueError("Parameters must be a dictionary")
+        # Validate parameter ranges
+        if "temperature" in v:
+            temp = v["temperature"]
+            if isinstance(temp, (int, float)) and (temp < 0.0 or temp > 2.0):
+                raise ValueError("Temperature must be between 0.0 and 2.0")
+        if "max_tokens" in v:
+            max_tokens = v["max_tokens"]
+            if isinstance(max_tokens, int) and (max_tokens < 1 or max_tokens > 1000000):
+                raise ValueError("max_tokens must be a positive integer not exceeding 1000000")
+        if "top_p" in v:
+            top_p = v["top_p"]
+            if isinstance(top_p, (int, float)) and (top_p < 0.0 or top_p > 1.0):
+                raise ValueError("top_p must be between 0.0 and 1.0")
         return v
 
     def get_temperature(self) -> float | None:

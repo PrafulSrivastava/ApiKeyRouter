@@ -931,7 +931,7 @@ class TestInMemoryStateStoreOtherMethods:
         for i, provider in enumerate(providers):
             key = APIKey(
                 id=f"key_{i}_{provider}",
-                key_material="encrypted",
+                key_material="encrypted-key-material",
                 provider_id=provider,
             )
             await store.save_key(key)
@@ -977,7 +977,7 @@ class TestInMemoryStateStoreOtherMethods:
         for i, state in enumerate(states):
             key = APIKey(
                 id=f"key{i}",
-                key_material="encrypted",
+                key_material="encrypted-key-material",
                 provider_id="openai",
                 state=state,
             )
@@ -1027,7 +1027,7 @@ class TestInMemoryStateStoreOtherMethods:
         store = InMemoryStateStore()
 
         # Create different entity types
-        key = APIKey(id="key1", key_material="encrypted", provider_id="openai")
+        key = APIKey(id="key1", key_material="encrypted-key-material", provider_id="openai")
         await store.save_key(key)
 
         quota = QuotaState(
@@ -1056,7 +1056,7 @@ class TestInMemoryStateStoreOtherMethods:
         store = InMemoryStateStore()
 
         # Create different entity types
-        key = APIKey(id="key1", key_material="encrypted", provider_id="openai")
+        key = APIKey(id="key1", key_material="encrypted-key-material", provider_id="openai")
         await store.save_key(key)
 
         quota = QuotaState(
@@ -1109,7 +1109,7 @@ class TestInMemoryStateStoreOtherMethods:
             state = KeyState.Available if i % 2 == 0 else KeyState.Throttled
             key = APIKey(
                 id=f"key{i}",
-                key_material="encrypted",
+                key_material="encrypted-key-material",
                 provider_id="openai" if i < 3 else "anthropic",
                 state=state,
             )
@@ -1137,7 +1137,7 @@ class TestInMemoryStateStoreOtherMethods:
         for i in range(100):
             key = APIKey(
                 id=f"key{i}",
-                key_material="encrypted",
+                key_material="encrypted-key-material",
                 provider_id="openai" if i % 2 == 0 else "anthropic",
                 state=KeyState.Available if i % 3 == 0 else KeyState.Throttled,
             )
@@ -1193,7 +1193,7 @@ class TestInMemoryStateStoreOtherMethods:
         for i in range(1000):
             key = APIKey(
                 id=f"key{i}",
-                key_material="encrypted",
+                key_material="encrypted-key-material",
                 provider_id="openai",
             )
             await store.save_key(key)

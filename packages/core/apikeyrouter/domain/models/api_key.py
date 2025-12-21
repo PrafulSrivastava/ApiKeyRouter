@@ -138,3 +138,25 @@ class APIKey(BaseModel):
             f"failure_count={self.failure_count})"
         )
 
+    def to_safe_dict(self) -> dict[str, Any]:
+        """Return a dictionary representation that excludes key_material.
+
+        This method should be used when serializing APIKey for API responses
+        or any external representation to ensure key material is never exposed.
+
+        Returns:
+            Dictionary with all APIKey fields except key_material.
+        """
+        return {
+            "id": self.id,
+            "provider_id": self.provider_id,
+            "state": self.state.value,
+            "state_updated_at": self.state_updated_at.isoformat(),
+            "created_at": self.created_at.isoformat(),
+            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
+            "usage_count": self.usage_count,
+            "failure_count": self.failure_count,
+            "cooldown_until": self.cooldown_until.isoformat() if self.cooldown_until else None,
+            "metadata": self.metadata,
+        }
+

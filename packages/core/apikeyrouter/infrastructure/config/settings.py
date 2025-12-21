@@ -60,6 +60,14 @@ class RouterSettings(BaseSettings):
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
+    # Encryption configuration
+    encryption_key: str | None = Field(
+        default=None,
+        description="Encryption key for API key material (required in production). "
+        "If not provided, will attempt to load from APIKEYROUTER_ENCRYPTION_KEY environment variable. "
+        "For development, can be auto-generated if not set.",
+    )
+
     @classmethod
     def from_dict(cls, config: dict[str, Any]) -> "RouterSettings":
         """Create settings from a dictionary.

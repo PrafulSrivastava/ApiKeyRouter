@@ -739,11 +739,11 @@ class TestApiKeyRouterKeyRegistration:
         await router.register_provider("test_provider", adapter)
 
         key1 = await router.register_key(
-            key_material="sk-key-1",
+            key_material="sk-test-key-1",
             provider_id="test_provider",
         )
         key2 = await router.register_key(
-            key_material="sk-key-2",
+            key_material="sk-test-key-2",
             provider_id="test_provider",
         )
 
@@ -779,7 +779,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        key = await router.register_key("sk-test-key", "test_provider")
+        key = await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -800,7 +800,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -820,7 +820,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        key = await router.register_key("sk-test-key", "test_provider")
+        key = await router.register_key("sk-test-key-extra", "test_provider")
 
         # Get initial quota state
         initial_quota = await router._quota_awareness_engine.get_quota_state(key.id)
@@ -845,7 +845,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -894,7 +894,7 @@ class TestApiKeyRouterRouteMethod:
 
         adapter = FailingAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -927,8 +927,8 @@ class TestApiKeyRouterRouteMethod:
 
         adapter = RetryableFailingAdapter()
         await router.register_provider("test_provider", adapter)
-        key1 = await router.register_key("sk-key-1", "test_provider")
-        key2 = await router.register_key("sk-key-2", "test_provider")
+        key1 = await router.register_key("sk-test-key-1", "test_provider")
+        key2 = await router.register_key("sk-test-key-2", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -948,7 +948,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent_dict = {
             "model": "test-model",
@@ -967,7 +967,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -985,7 +985,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        key = await router.register_key("sk-test-key", "test_provider")
+        key = await router.register_key("sk-test-key-extra", "test_provider")
 
         initial_usage = key.usage_count
         initial_last_used = key.last_used_at
@@ -1011,7 +1011,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        key = await router.register_key("sk-test-key", "test_provider")
+        key = await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -1043,7 +1043,7 @@ class TestApiKeyRouterRouteMethod:
         await router.register_provider("test_provider", adapter)
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -1080,8 +1080,8 @@ class TestApiKeyRouterRouteMethod:
 
         adapter = NonRetryableFailingAdapter()
         await router.register_provider("test_provider", adapter)
-        key1 = await router.register_key("sk-key-1", "test_provider")
-        key2 = await router.register_key("sk-key-2", "test_provider")
+        key1 = await router.register_key("sk-test-key-1", "test_provider")
+        key2 = await router.register_key("sk-test-key-2", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -1101,7 +1101,7 @@ class TestApiKeyRouterRouteMethod:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         # Create intent without provider_id
         intent = {
@@ -1149,7 +1149,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
@@ -1180,7 +1180,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        key = await router.register_key("sk-test-key", "test_provider")
+        key = await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
@@ -1209,7 +1209,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
@@ -1241,7 +1241,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
@@ -1264,7 +1264,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
@@ -1292,7 +1292,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -1315,7 +1315,7 @@ class TestApiKeyRouterObservabilityIntegration:
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
 
         # Check that key_registered event was emitted
         event_types = [e["event_type"] for e in mock_obs.events]
@@ -1360,7 +1360,7 @@ class TestApiKeyRouterObservabilityIntegration:
 
         adapter = FailingAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
@@ -1383,7 +1383,7 @@ class TestApiKeyRouterObservabilityIntegration:
         router = ApiKeyRouter()
         adapter = MockProviderAdapter()
         await router.register_provider("test_provider", adapter)
-        await router.register_key("sk-test-key", "test_provider")
+        await router.register_key("sk-test-key-extra", "test_provider")
         mock_obs = MockObservabilityManager()
         router._observability_manager = mock_obs
 
