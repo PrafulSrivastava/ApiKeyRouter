@@ -93,7 +93,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Poetry
+      - name: Install Poetry 2.0
         uses: snok/install-poetry@v1
         with:
           version: 2.6.1
