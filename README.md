@@ -1,6 +1,22 @@
 # API Key Router
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Type checking: mypy](https://img.shields.io/badge/type%20checking-mypy-blue.svg)](https://mypy.readthedocs.io/)
+
 Intelligent API key routing library and proxy service for managing multiple LLM provider API keys with quota awareness, cost optimization, and intelligent routing.
+
+## Features
+
+- 🔄 **Intelligent Routing**: Automatically routes requests across multiple API keys based on availability, cost, and reliability
+- 📊 **Quota Awareness**: Tracks and manages API quotas, rate limits, and usage across providers
+- 💰 **Cost Optimization**: Minimizes costs by selecting the most cost-effective keys while maintaining reliability
+- 🔌 **Provider Agnostic**: Works with OpenAI, Anthropic, Gemini, and other LLM providers
+- 🚀 **FastAPI Proxy**: OpenAI-compatible HTTP API for easy integration
+- 🔒 **Secure**: Encrypted key storage and secure state management
+- 📈 **Observable**: Comprehensive logging, metrics, and tracing
+- 🐳 **Docker Ready**: Pre-built Docker images and Docker Compose setup
 
 ## Project Structure
 
@@ -75,14 +91,74 @@ The Poetry workspace allows you to work with both packages simultaneously:
 
 ### Running Tests
 
-```bash
-# Run all tests
-poetry run pytest
+The project includes comprehensive test suites: unit tests, integration tests, and performance benchmarks.
 
-# Run tests for specific package
+**Run all tests:**
+```bash
+poetry run pytest
+```
+
+**Run tests for specific package:**
+```bash
+# Core package tests
 poetry run pytest packages/core/tests
+
+# Proxy package tests
 poetry run pytest packages/proxy/tests
 ```
+
+**Run specific test types:**
+
+```bash
+# Unit tests only
+poetry run pytest packages/core/tests/unit
+
+# Integration tests only
+poetry run pytest packages/core/tests/integration
+
+# Benchmark/performance tests
+poetry run pytest packages/core/tests/benchmarks --benchmark-only
+
+# Run tests with specific markers
+poetry run pytest -m unit          # Unit tests
+poetry run pytest -m integration  # Integration tests
+poetry run pytest -m benchmark    # Benchmark tests
+```
+
+**Benchmark Tests:**
+
+Performance benchmarks measure routing decision time, key lookup performance, and quota calculation speed:
+
+```bash
+# Run all benchmark tests with performance metrics
+poetry run pytest packages/core/tests/benchmarks --benchmark-only
+
+# Run specific benchmark file
+poetry run pytest packages/core/tests/benchmarks/benchmark_routing.py --benchmark-only
+
+# Run benchmarks with verbose output
+poetry run pytest packages/core/tests/benchmarks --benchmark-only -v
+
+# Compare benchmark results (saves to .benchmarks/)
+poetry run pytest packages/core/tests/benchmarks --benchmark-only --benchmark-save=baseline
+```
+
+**Performance Targets:**
+- Key lookup: p95 < 1ms
+- Quota operations: p95 < 5ms
+- Routing decisions: p95 < 10ms
+
+**Test Coverage:**
+
+```bash
+# Run tests with coverage report
+poetry run pytest --cov=packages/core/apikeyrouter --cov-report=html
+
+# View coverage report
+# Open htmlcov/index.html in your browser
+```
+
+**Note:** Some integration tests require optional dependencies (e.g., `motor` for MongoDB tests). These tests are automatically skipped if dependencies are not installed.
 
 ### Code Quality
 
@@ -155,8 +231,13 @@ The project includes a `docker-compose.yml` file for local development with opti
 - **MongoDB**: Available on `localhost:27017` (for optional persistent storage)
 - **Redis**: Optional, commented out by default (uncomment in `docker-compose.yml` to enable)
 
+**Important:** Docker Compose automatically loads all environment variables from the `.env` file. You only need to manage environment variables in one place.
+
 **Start services:**
 ```bash
+# Ensure .env file exists (copy from .env.example if needed)
+cp .env.example .env
+# Edit .env with your configuration
 docker-compose up -d
 ```
 
@@ -176,12 +257,17 @@ Both MongoDB and Redis services include health checks that verify they're ready 
 
 **Environment Variables:**
 
+All environment variables are managed through the `.env` file. Docker Compose automatically loads all variables from `.env` - you don't need to configure them separately in `docker-compose.yml`.
+
 Copy `.env.example` to `.env` and configure as needed:
 
-- **MongoDB**: `MONGODB_URL`, `MONGODB_DATABASE`, `MONGODB_ENABLED`
-- **Redis**: `REDIS_URL`, `REDIS_ENABLED` (uncomment redis service in docker-compose.yml first)
-- **Proxy**: `PROXY_HOST`, `PROXY_PORT`, `PROXY_RELOAD`
-- **Management API**: `MANAGEMENT_API_KEY`, `MANAGEMENT_API_ENABLED`
+- **Required**: `APIKEYROUTER_ENCRYPTION_KEY` (generate with: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
+- **MongoDB**: `MONGODB_URL`, `MONGO_INITDB_DATABASE`
+- **Redis**: `REDIS_URL` (uncomment redis service in docker-compose.yml first)
+- **Proxy**: `PORT`, `APIKEYROUTER_MANAGEMENT_API_KEY`, `ENABLE_HSTS`, `CORS_ORIGINS`
+- **Core Settings**: `APIKEYROUTER_MAX_DECISIONS`, `APIKEYROUTER_LOG_LEVEL`, etc.
+
+See `.env.example` for a complete list of all available environment variables.
 - **Observability**: `LOG_LEVEL`, `METRICS_ENABLED`
 
 **Note:** The library works in-memory by default. MongoDB and Redis are optional for testing persistence backends.
@@ -235,11 +321,97 @@ Instead, please report them via email to [security@example.com] or see [SECURITY
 
 See [SECURITY.md](SECURITY.md) for detailed security information.
 
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/ApiKeyRouter.git
+cd ApiKeyRouter
+
+# Install dependencies
+poetry install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run the proxy service
+cd packages/proxy
+poetry run uvicorn apikeyrouter_proxy.main:app --reload
+```
+
+### Basic Usage
+
+```python
+from apikeyrouter import ApiKeyRouter
+from apikeyrouter.infrastructure.adapters.openai_adapter import OpenAIAdapter
+
+# Initialize router
+router = ApiKeyRouter()
+
+# Register provider and keys
+await router.register_provider("openai", OpenAIAdapter())
+await router.register_key("sk-your-key-1", "openai")
+await router.register_key("sk-your-key-2", "openai")
+
+# Route a request
+from apikeyrouter.domain.models import RequestIntent, Message
+
+intent = RequestIntent(
+    model="gpt-4",
+    messages=[Message(role="user", content="Hello!")],
+    provider_id="openai"
+)
+
+response = await router.route(intent)
+```
+
+See [Quick Start Guide](docs/guides/quick-start.md) for more examples.
+
+## Documentation
+
+- **[API Reference](packages/core/API_REFERENCE.md)**: Complete API documentation
+- **[Architecture](docs/architecture/)**: System architecture and design decisions
+- **[User Guides](docs/guides/)**: Step-by-step guides and tutorials
+- **[Use Cases](docs/use-cases.md)**: Common use cases and examples
+
 ## Contributing
 
-See `CONTRIBUTING.md` for contribution guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+
+- Code of Conduct
+- Development workflow
+- Coding standards
+- Testing requirements
+- Pull request process
+
+### Quick Contribution Guide
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes following our coding standards
+4. Write or update tests
+5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-MIT License - see `LICENSE` file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- **Documentation**: Check the [docs](docs/) directory
+- **Issues**: [GitHub Issues](https://github.com/your-username/ApiKeyRouter/issues)
+- **Security**: See [SECURITY.md](SECURITY.md) for reporting security vulnerabilities
+
+## Acknowledgments
+
+- Built with [FastAPI](https://fastapi.tiangolo.com/)
+- Uses [Pydantic](https://docs.pydantic.dev/) for data validation
+- Powered by [Poetry](https://python-poetry.org/) for dependency management
 

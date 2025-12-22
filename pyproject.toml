@@ -11,6 +11,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
+apikeyrouter-core = {path = "packages/core", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
@@ -21,6 +22,7 @@ ruff = "^0.1.13"
 mypy = "^1.8.0"
 pre-commit = "^3.6.0"
 locust = "^2.24.1"
+python-dotenv = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -133,7 +135,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pytest.ini_options]
-python_files = ["test_*.py", "*_test.py"]
+python_files = ["test_*.py", "*_test.py", "benchmark_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 testpaths = ["packages/core/tests", "packages/proxy/tests"]

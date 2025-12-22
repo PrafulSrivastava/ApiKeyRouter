@@ -21,11 +21,22 @@ from apikeyrouter.infrastructure.state_store.mongo_store import MongoStateStore
 async def mongodb_database():
     """Create MongoDB database for testing."""
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+    
+    # Check if MongoDB is available
+    try:
+        client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
+        await client.admin.command("ping")
+    except Exception:
+        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+    
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_quota"]
     yield database
     # Cleanup: drop test database
-    await client.drop_database("test_apikeyrouter_quota")
+    try:
+        await client.drop_database("test_apikeyrouter_quota")
+    except Exception:
+        pass  # Ignore cleanup errors
     client.close()
 
 
@@ -262,7 +273,8 @@ async def test_time_window_queries_by_reset_at_range(mongo_store: MongoStateStor
     assert len(results) > 0
     for result in results:
         if isinstance(result, QuotaState):
-            assert now <= result.reset_at <= tomorrow
+            # Use timedelta tolerance for microsecond precision differences
+            assert (now - timedelta(seconds=1)) <= result.reset_at <= (tomorrow + timedelta(seconds=1))
 
 
 @pytest.mark.asyncio

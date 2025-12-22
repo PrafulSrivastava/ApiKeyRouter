@@ -60,7 +60,7 @@ class APIKeyDocument(Document):
         - created_at: Index for sorting by creation time
     """
 
-    id: Indexed(str, unique=True)  # type: ignore[valid-type]
+    id: str  # Maps to MongoDB _id (automatically unique and indexed)
     key_material: str
     provider_id: Indexed(str)  # type: ignore[valid-type]
     state: Indexed(str)  # type: ignore[valid-type]  # Store as string, convert to KeyState enum
@@ -139,7 +139,7 @@ class QuotaStateDocument(Document):
         - reset_at: Index for querying by reset time
     """
 
-    id: Indexed(str, unique=True)  # type: ignore[valid-type]
+    id: str  # Maps to MongoDB _id (automatically unique and indexed)
     key_id: Indexed(str, unique=True)  # type: ignore[valid-type]
     capacity_state: CapacityState
     capacity_unit: CapacityUnit
@@ -227,7 +227,7 @@ class RoutingDecisionDocument(Document):
         - decision_timestamp: Index for querying by time (with optional TTL)
     """
 
-    id: Indexed(str, unique=True)  # type: ignore[valid-type]
+    id: str  # Maps to MongoDB _id (automatically unique and indexed)
     request_id: str
     selected_key_id: Indexed(str)  # type: ignore[valid-type]
     selected_provider_id: Indexed(str)  # type: ignore[valid-type]

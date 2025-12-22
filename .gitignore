@@ -15,6 +15,7 @@ downloads/
 eggs/
 docs/
 *.bmad-core/
+*.benchmarks/
 *.cursor/
 *.ignore/
 .eggs/

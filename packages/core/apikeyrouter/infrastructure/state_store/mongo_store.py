@@ -295,13 +295,14 @@ class MongoStateStore(StateStore):
             await self.initialize()
 
         try:
-            db = self._client[self._database_name]
-            collection = db["api_keys"]
-            query = {} if provider_id is None else {"provider_id": provider_id}
-            cursor = collection.find(query)
-            keys = []
-            async for doc in cursor:
-                keys.append(APIKey(**doc))
+            # Use Beanie to query documents
+            if provider_id is None:
+                docs = await APIKeyDocument.find_all().to_list()
+            else:
+                docs = await APIKeyDocument.find(APIKeyDocument.provider_id == provider_id).to_list()
+            
+            # Convert documents to domain models
+            keys = [doc.to_domain_model() for doc in docs]
             return keys
         except Exception as e:
             error_msg = f"Failed to list keys: {e}"
@@ -506,7 +507,17 @@ class MongoStateStore(StateStore):
                         key_filter["created_at"] = timestamp_filter
 
                 # Build Beanie query
-                beanie_query = APIKeyDocument.find(key_filter)
+                # Beanie find() accepts a dict, but we need to use the correct field names
+                # For id field, use the document's id field directly
+                if "id" in key_filter:
+                    # Use Beanie's find with id field
+                    beanie_query = APIKeyDocument.find(APIKeyDocument.id == key_filter["id"])
+                    # Remove id from filter for other conditions
+                    other_filters = {k: v for k, v in key_filter.items() if k != "id"}
+                    for field, value in other_filters.items():
+                        beanie_query = beanie_query.find(getattr(APIKeyDocument, field) == value)
+                else:
+                    beanie_query = APIKeyDocument.find(key_filter)
                 if query.limit is not None:
                     beanie_query = beanie_query.limit(query.limit)
                 if query.offset is not None:
