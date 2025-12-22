@@ -373,9 +373,11 @@ See [Quick Start Guide](docs/guides/quick-start.md) for more examples.
 ## Documentation
 
 - **[API Reference](packages/core/API_REFERENCE.md)**: Complete API documentation
+- **[Workflows](docs/workflow/product-flow.md)**: Product workflows and system flows
+- **[Examples](docs/examples/)**: Code examples and usage patterns
+- **[Use Cases](docs/use-cases.md)**: Common use cases and examples
 - **[Architecture](docs/architecture/)**: System architecture and design decisions
 - **[User Guides](docs/guides/)**: Step-by-step guides and tutorials
-- **[Use Cases](docs/use-cases.md)**: Common use cases and examples
 
 ## Contributing
 

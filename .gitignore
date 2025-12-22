@@ -13,7 +13,6 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-docs/
 *.bmad-core/
 *.benchmarks/
 *.cursor/
