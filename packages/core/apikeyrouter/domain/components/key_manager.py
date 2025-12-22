@@ -551,11 +551,9 @@ class KeyManager:
 
         # Encrypt new key_material using EncryptionService
         try:
+            # Fernet.encrypt() returns base64-encoded bytes, so we just decode to string
             encrypted_bytes = self._encryption_service.encrypt(new_key_material.strip())
-            # Store as base64-encoded string for compatibility with APIKey model
-            from base64 import b64encode
-
-            encrypted_new_material = b64encode(encrypted_bytes).decode()
+            encrypted_new_material = encrypted_bytes.decode('utf-8')
         except EncryptionError as e:
             raise KeyRegistrationError(
                 f"Failed to encrypt new key material: {e}"

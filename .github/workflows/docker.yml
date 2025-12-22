@@ -2,11 +2,11 @@ name: Docker Build and Publish
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
     tags:
       - 'v*.*.*'  # Trigger on version tags like v0.1.0
   pull_request:
-    branches: [main, develop]
+    branches: [main, master, develop]
   workflow_dispatch:  # Allow manual triggering
 
 env:

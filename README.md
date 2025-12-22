@@ -7,6 +7,57 @@
 
 Intelligent API key routing library and proxy service for managing multiple LLM provider API keys with quota awareness, cost optimization, and intelligent routing.
 
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ApiKeyRouter
+
+# Install dependencies
+poetry install
+
+# Set up environment (optional)
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+### Basic Usage
+
+```python
+import asyncio
+from apikeyrouter import ApiKeyRouter
+from apikeyrouter.domain.models.request_intent import RequestIntent, Message
+from apikeyrouter.infrastructure.adapters.openai_adapter import OpenAIAdapter
+
+async def main():
+    # Initialize router
+    router = ApiKeyRouter()
+    
+    # Register provider and keys
+    await router.register_provider("openai", OpenAIAdapter())
+    await router.register_key("sk-your-key-1", "openai")
+    await router.register_key("sk-your-key-2", "openai")
+    
+    # Route a request
+    intent = RequestIntent(
+        model="gpt-4",
+        messages=[Message(role="user", content="Hello!")],
+        provider_id="openai"
+    )
+    
+    response = await router.route(intent)
+    print(f"Response: {response.content}")
+    print(f"Key used: {response.key_used}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**See [Quick Start Guide](docs/guides/quick-start.md) for more examples.**
+
 ## Features
 
 - 🔄 **Intelligent Routing**: Automatically routes requests across multiple API keys based on availability, cost, and reliability
@@ -47,58 +98,81 @@ apikeyrouter/
   - Installation: [Docker Desktop](https://www.docker.com/products/docker-desktop) or [Docker Engine](https://docs.docker.com/engine/install/)
   - Verify: `docker --version` and `docker-compose --version`
 
-## Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd ApiKeyRouter
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   poetry install
-   ```
-   This will install dependencies for all workspace packages (core and proxy).
-
-3. **Generate lock file (if not already present):**
-   ```bash
-   poetry lock
-   ```
-
-4. **Set up environment variables (optional):**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-5. **Start local services with Docker Compose (optional):**
-   ```bash
-   docker-compose up -d
-   ```
-   This starts MongoDB (and optionally Redis) for local development and testing.
-
-## Development Workflow
+## Development Setup
 
 ### Working with the Monorepo
 
 The Poetry workspace allows you to work with both packages simultaneously:
 
-- **Install all dependencies:** `poetry install` (from root)
-- **Add dependency to core package:** `poetry add <package> --directory packages/core`
-- **Add dependency to proxy package:** `poetry add <package> --directory packages/proxy`
-- **Run commands in specific package:** `poetry run <command> --directory packages/core`
+```bash
+# Install all dependencies
+poetry install
 
-### Running Tests
+# Add dependency to core package
+poetry add <package> --directory packages/core
 
-The project includes comprehensive test suites: unit tests, integration tests, and performance benchmarks.
+# Add dependency to proxy package
+poetry add <package> --directory packages/proxy
 
-**Run all tests:**
+# Run commands in specific package
+poetry run <command> --directory packages/core
+```
+
+### Environment Variables
+
+All environment variables are managed through the `.env` file. Docker Compose automatically loads all variables from `.env`.
+
+Copy `.env.example` to `.env` and configure as needed:
+
+- **Required**: `APIKEYROUTER_ENCRYPTION_KEY` (generate with: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
+- **MongoDB**: `MONGODB_URL`, `MONGO_INITDB_DATABASE`
+- **Redis**: `REDIS_URL` (uncomment redis service in docker-compose.yml first)
+- **Proxy**: `PORT`, `APIKEYROUTER_MANAGEMENT_API_KEY`, `ENABLE_HSTS`, `CORS_ORIGINS`
+- **Core Settings**: `APIKEYROUTER_MAX_DECISIONS`, `APIKEYROUTER_LOG_LEVEL`, etc.
+
+See `.env.example` for a complete list of all available environment variables.
+
+**Note:** The library works in-memory by default. MongoDB and Redis are optional for testing persistence backends.
+
+### Docker Compose Services
+
+The project includes a `docker-compose.yml` file for local development with optional persistence backends:
+
+- **MongoDB**: Available on `localhost:27017` (for optional persistent storage)
+- **Redis**: Optional, commented out by default (uncomment in `docker-compose.yml` to enable)
+
+**Start services:**
+```bash
+docker-compose up -d
+```
+
+**Stop services:**
+```bash
+docker-compose down
+```
+
+**View logs:**
+```bash
+docker-compose logs -f
+```
+
+### Running the Proxy Service
+
+```bash
+cd packages/proxy
+poetry run uvicorn apikeyrouter_proxy.main:app --reload
+```
+
+## Testing
+
+### Run All Tests
+
 ```bash
 poetry run pytest
 ```
 
-**Run tests for specific package:**
+### Run Tests for Specific Package
+
 ```bash
 # Core package tests
 poetry run pytest packages/core/tests
@@ -107,7 +181,7 @@ poetry run pytest packages/core/tests
 poetry run pytest packages/proxy/tests
 ```
 
-**Run specific test types:**
+### Run Specific Test Types
 
 ```bash
 # Unit tests only
@@ -125,7 +199,7 @@ poetry run pytest -m integration  # Integration tests
 poetry run pytest -m benchmark    # Benchmark tests
 ```
 
-**Benchmark Tests:**
+### Benchmark Tests
 
 Performance benchmarks measure routing decision time, key lookup performance, and quota calculation speed:
 
@@ -148,7 +222,7 @@ poetry run pytest packages/core/tests/benchmarks --benchmark-only --benchmark-sa
 - Quota operations: p95 < 5ms
 - Routing decisions: p95 < 10ms
 
-**Test Coverage:**
+### Test Coverage
 
 ```bash
 # Run tests with coverage report
@@ -160,31 +234,35 @@ poetry run pytest --cov=packages/core/apikeyrouter --cov-report=html
 
 **Note:** Some integration tests require optional dependencies (e.g., `motor` for MongoDB tests). These tests are automatically skipped if dependencies are not installed.
 
-### Code Quality
+## Code Quality
 
 The project uses **ruff** for linting and formatting, and **mypy** for type checking. All quality checks run automatically in CI.
 
-**Format code:**
+### Format Code
+
 ```bash
 poetry run ruff format .
 ```
 
-**Lint code:**
+### Lint Code
+
 ```bash
 poetry run ruff check .
 ```
 
-**Type check:**
+### Type Check
+
 ```bash
 poetry run mypy packages/core packages/proxy
 ```
 
-**Run all quality checks:**
+### Run All Quality Checks
+
 ```bash
 poetry run ruff format . && poetry run ruff check . && poetry run mypy packages/core packages/proxy
 ```
 
-**Pre-commit Hooks (Optional):**
+### Pre-commit Hooks (Optional)
 
 Install pre-commit hooks to automatically run quality checks before each commit:
 
@@ -205,7 +283,7 @@ Pre-commit hooks will automatically:
 - Check linting with ruff
 - Validate YAML, JSON, and TOML files
 
-**Code Style Standards:**
+### Code Style Standards
 
 See [`docs/architecture/coding-standards.md`](docs/architecture/coding-standards.md) for detailed coding standards and conventions.
 
@@ -215,62 +293,14 @@ Key standards:
 - **Type Checking:** mypy with strict mode enabled
 - **Import Sorting:** Automatic via ruff
 
-### Running the Proxy Service
+## Documentation
 
-```bash
-cd packages/proxy
-poetry run uvicorn apikeyrouter_proxy.main:app --reload
-```
-
-### Development Environment Setup
-
-**Docker Compose Services:**
-
-The project includes a `docker-compose.yml` file for local development with optional persistence backends:
-
-- **MongoDB**: Available on `localhost:27017` (for optional persistent storage)
-- **Redis**: Optional, commented out by default (uncomment in `docker-compose.yml` to enable)
-
-**Important:** Docker Compose automatically loads all environment variables from the `.env` file. You only need to manage environment variables in one place.
-
-**Start services:**
-```bash
-# Ensure .env file exists (copy from .env.example if needed)
-cp .env.example .env
-# Edit .env with your configuration
-docker-compose up -d
-```
-
-**Stop services:**
-```bash
-docker-compose down
-```
-
-**View logs:**
-```bash
-docker-compose logs -f
-```
-
-**Service Health Checks:**
-
-Both MongoDB and Redis services include health checks that verify they're ready before use. Services will restart automatically if they fail.
-
-**Environment Variables:**
-
-All environment variables are managed through the `.env` file. Docker Compose automatically loads all variables from `.env` - you don't need to configure them separately in `docker-compose.yml`.
-
-Copy `.env.example` to `.env` and configure as needed:
-
-- **Required**: `APIKEYROUTER_ENCRYPTION_KEY` (generate with: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
-- **MongoDB**: `MONGODB_URL`, `MONGO_INITDB_DATABASE`
-- **Redis**: `REDIS_URL` (uncomment redis service in docker-compose.yml first)
-- **Proxy**: `PORT`, `APIKEYROUTER_MANAGEMENT_API_KEY`, `ENABLE_HSTS`, `CORS_ORIGINS`
-- **Core Settings**: `APIKEYROUTER_MAX_DECISIONS`, `APIKEYROUTER_LOG_LEVEL`, etc.
-
-See `.env.example` for a complete list of all available environment variables.
-- **Observability**: `LOG_LEVEL`, `METRICS_ENABLED`
-
-**Note:** The library works in-memory by default. MongoDB and Redis are optional for testing persistence backends.
+- **[API Reference](packages/core/API_REFERENCE.md)**: Complete API documentation
+- **[Workflows](docs/workflow/product-flow.md)**: Product workflows and system flows
+- **[Examples](docs/examples/)**: Code examples and usage patterns
+- **[Use Cases](docs/use-cases.md)**: Common use cases and examples
+- **[Architecture](docs/architecture/)**: System architecture and design decisions
+- **[User Guides](docs/guides/)**: Step-by-step guides and tutorials
 
 ## Package Details
 
@@ -300,85 +330,6 @@ The proxy service provides:
 - `uvicorn` - ASGI server
 - `apikeyrouter-core` - Core library (local dependency)
 
-## Security
-
-### Reporting Security Issues
-
-**Please do not report security vulnerabilities through public GitHub issues.**
-
-Instead, please report them via email to [security@example.com] or see [SECURITY.md](SECURITY.md) for details.
-
-### Security Practices
-
-- **Dependency Scanning**: Automated vulnerability scanning runs on every commit
-- **Static Analysis**: Bandit scans code for security issues
-- **Secret Scanning**: Automated secret scanning prevents accidental commits
-- **Dependabot**: Automated security updates for dependencies
-- **Security Headers**: All API responses include security headers
-- **Encryption**: API keys encrypted at rest using AES-256
-- **Input Validation**: All inputs validated to prevent injection attacks
-- **Audit Logging**: All security events logged
-
-See [SECURITY.md](SECURITY.md) for detailed security information.
-
-## Quick Start
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/ApiKeyRouter.git
-cd ApiKeyRouter
-
-# Install dependencies
-poetry install
-
-# Set up environment
-cp .env.example .env
-# Edit .env with your configuration
-
-# Run the proxy service
-cd packages/proxy
-poetry run uvicorn apikeyrouter_proxy.main:app --reload
-```
-
-### Basic Usage
-
-```python
-from apikeyrouter import ApiKeyRouter
-from apikeyrouter.infrastructure.adapters.openai_adapter import OpenAIAdapter
-
-# Initialize router
-router = ApiKeyRouter()
-
-# Register provider and keys
-await router.register_provider("openai", OpenAIAdapter())
-await router.register_key("sk-your-key-1", "openai")
-await router.register_key("sk-your-key-2", "openai")
-
-# Route a request
-from apikeyrouter.domain.models import RequestIntent, Message
-
-intent = RequestIntent(
-    model="gpt-4",
-    messages=[Message(role="user", content="Hello!")],
-    provider_id="openai"
-)
-
-response = await router.route(intent)
-```
-
-See [Quick Start Guide](docs/guides/quick-start.md) for more examples.
-
-## Documentation
-
-- **[API Reference](packages/core/API_REFERENCE.md)**: Complete API documentation
-- **[Workflows](docs/workflow/product-flow.md)**: Product workflows and system flows
-- **[Examples](docs/examples/)**: Code examples and usage patterns
-- **[Use Cases](docs/use-cases.md)**: Common use cases and examples
-- **[Architecture](docs/architecture/)**: System architecture and design decisions
-- **[User Guides](docs/guides/)**: Step-by-step guides and tutorials
-
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
@@ -401,6 +352,27 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
+## Security
+
+### Reporting Security Issues
+
+**Please do not report security vulnerabilities through public GitHub issues.**
+
+Instead, please report them via email to [security@example.com] or see [SECURITY.md](SECURITY.md) for details.
+
+### Security Practices
+
+- **Dependency Scanning**: Automated vulnerability scanning runs on every commit
+- **Static Analysis**: Bandit scans code for security issues
+- **Secret Scanning**: Automated secret scanning prevents accidental commits
+- **Dependabot**: Automated security updates for dependencies
+- **Security Headers**: All API responses include security headers
+- **Encryption**: API keys encrypted at rest using AES-256
+- **Input Validation**: All inputs validated to prevent injection attacks
+- **Audit Logging**: All security events logged
+
+See [SECURITY.md](SECURITY.md) for detailed security information.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -416,4 +388,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - Uses [Pydantic](https://docs.pydantic.dev/) for data validation
 - Powered by [Poetry](https://python-poetry.org/) for dependency management
-
