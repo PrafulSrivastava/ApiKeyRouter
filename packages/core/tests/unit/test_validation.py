@@ -8,7 +8,6 @@ import pytest
 from apikeyrouter.domain.components.key_manager import KeyManager, KeyRegistrationError
 from apikeyrouter.domain.interfaces.observability_manager import ObservabilityManager
 from apikeyrouter.domain.interfaces.state_store import StateStore
-from apikeyrouter.domain.models.api_key import APIKey, KeyState
 from apikeyrouter.domain.models.request_intent import Message, RequestIntent
 from apikeyrouter.infrastructure.utils.validation import (
     ValidationError,
@@ -141,7 +140,7 @@ class TestProviderIdValidation:
         # Test with a format-valid but suspicious pattern
         with pytest.raises(ValidationError):
             validate_provider_id("openai'; DROP TABLE providers; --")
-        
+
         # Test with format-valid injection pattern that passes format check
         # (format validation catches most, but test that injection check is still there)
         # Since format validation is stricter, this is acceptable behavior
@@ -251,14 +250,16 @@ class TestRequestIntentValidation:
         validate_request_intent(intent)
 
         # Empty model (caught by Pydantic first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        from pydantic import ValidationError as PydanticValidationError
+
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="",
                 messages=[Message(role="user", content="Hello")],
             )
 
         # Model too long (caught by Pydantic validator first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="a" * 201,
                 messages=[Message(role="user", content="Hello")],
@@ -282,14 +283,16 @@ class TestRequestIntentValidation:
         validate_request_intent(intent)
 
         # Empty messages (caught by Pydantic first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        from pydantic import ValidationError as PydanticValidationError
+
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="gpt-4",
                 messages=[],
             )
 
         # Too many messages (caught by Pydantic validator first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="gpt-4",
                 messages=[Message(role="user", content="Hello")] * 1001,
@@ -316,7 +319,9 @@ class TestRequestIntentValidation:
         validate_request_intent(intent)
 
         # Invalid temperature range (caught by Pydantic validator first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        from pydantic import ValidationError as PydanticValidationError
+
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="gpt-4",
                 messages=[Message(role="user", content="Hello")],
@@ -324,7 +329,7 @@ class TestRequestIntentValidation:
             )
 
         # Invalid max_tokens (caught by Pydantic validator first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="gpt-4",
                 messages=[Message(role="user", content="Hello")],
@@ -332,7 +337,7 @@ class TestRequestIntentValidation:
             )
 
         # Invalid top_p range (caught by Pydantic validator first)
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(PydanticValidationError):  # Pydantic validation error
             intent = RequestIntent(
                 model="gpt-4",
                 messages=[Message(role="user", content="Hello")],

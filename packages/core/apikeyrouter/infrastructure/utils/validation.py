@@ -54,10 +54,7 @@ def detect_injection_attempt(value: str) -> bool:
     if not isinstance(value, str):
         return False
 
-    for pattern in INJECTION_PATTERNS:
-        if pattern.search(value):
-            return True
-    return False
+    return any(pattern.search(value) for pattern in INJECTION_PATTERNS)
 
 
 def validate_key_material(key_material: str) -> None:
@@ -88,10 +85,9 @@ def validate_key_material(key_material: str) -> None:
 
     # Format validation - common API key prefixes
     valid_prefixes = ("sk-", "pk-", "xai-", "claude-", "anthropic-", "gcp-", "aws-")
-    if not key_material.startswith(valid_prefixes):
+    if not key_material.startswith(valid_prefixes) and detect_injection_attempt(key_material):
         # Allow keys without known prefixes (for flexibility)
         # But check for suspicious patterns
-        if detect_injection_attempt(key_material):
             raise ValidationError(
                 "Key material contains suspicious patterns",
                 field="key_material",
@@ -212,7 +208,7 @@ def validate_metadata(metadata: dict[str, Any] | None) -> None:
             continue  # None values are allowed
 
         # Validate value type (only allow primitive types and lists/dicts of primitives)
-        if isinstance(value, (str, int, float, bool)):
+        if isinstance(value, str | int | float | bool):
             # Check string values for injection attempts
             if isinstance(value, str):
                 if len(value) > 10000:  # Reasonable limit for metadata values
@@ -233,7 +229,7 @@ def validate_metadata(metadata: dict[str, Any] | None) -> None:
                     field=f"metadata.{key}",
                 )
             for item in value:
-                if not isinstance(item, (str, int, float, bool)):
+                if not isinstance(item, str | int | float | bool):
                     raise ValidationError(
                         "Metadata list items must be primitive types",
                         field=f"metadata.{key}",
@@ -388,7 +384,7 @@ def validate_request_intent(intent: RequestIntent) -> None:
                 )
 
             # Validate value types
-            if not isinstance(value, (str, int, float, bool, list, type(None))):
+            if not isinstance(value, str | int | float | bool | list | type(None)):
                 raise ValidationError(
                     "Parameter values must be primitive types or lists",
                     field=param_field,
@@ -402,7 +398,7 @@ def validate_request_intent(intent: RequestIntent) -> None:
                 )
 
             # Validate numeric ranges
-            if isinstance(value, (int, float)):
+            if isinstance(value, int | float):
                 if key == "temperature" and (value < 0.0 or value > 2.0):
                     raise ValidationError(
                         "Temperature must be between 0.0 and 2.0",

@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -191,7 +190,7 @@ class TestSuccessfulRequestRouting:
             messages=[Message(role="user", content="Test")],
             parameters={"provider_id": "openai"},
         )
-        response = await api_key_router.route(request_intent)
+        await api_key_router.route(request_intent)
 
         # Verify quota state was updated
         updated_quota = await api_key_router.quota_awareness_engine.get_quota_state(
@@ -206,7 +205,7 @@ class TestSuccessfulRequestRouting:
         """Test cost recorded."""
         # Register provider and key
         await api_key_router.register_provider("openai", mock_adapter)
-        key = await api_key_router.register_key(
+        await api_key_router.register_key(
             key_material="sk-test-key-1", provider_id="openai"
         )
 

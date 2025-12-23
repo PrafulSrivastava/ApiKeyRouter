@@ -2,12 +2,10 @@
 
 from datetime import datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock
 
 import pytest
 
 from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
-from apikeyrouter.domain.models.api_key import KeyState
 from apikeyrouter.domain.models.request_intent import Message, RequestIntent
 from apikeyrouter.domain.models.system_error import ErrorCategory, SystemError
 from apikeyrouter.domain.models.system_response import ResponseMetadata, SystemResponse, TokenUsage

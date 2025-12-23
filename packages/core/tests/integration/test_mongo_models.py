@@ -34,7 +34,7 @@ async def mongodb_database():
     import os
 
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    
+
     # Check if MongoDB is available
     try:
         test_client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
@@ -42,15 +42,15 @@ async def mongodb_database():
         test_client.close()
     except Exception:
         pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
-    
+
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_models"]
+    from contextlib import suppress
+
     yield database
     # Cleanup: drop test database
-    try:
-        await client.drop_database("test_apikeyrouter_models")
-    except Exception:
-        pass  # Ignore cleanup errors
+    with suppress(Exception):
+        await client.drop_database("test_apikeyrouter_models")  # Ignore cleanup errors
     client.close()
 
 
@@ -268,10 +268,12 @@ async def test_state_transition_document_indexes(initialized_beanie):
 @pytest.mark.asyncio
 async def test_pydantic_validation_works(initialized_beanie):
     """Test that Pydantic validation works in Beanie documents."""
+    from pydantic import ValidationError
+
     # Create a document with invalid data (missing required field)
-    with pytest.raises(Exception):  # Pydantic validation error
+    with pytest.raises(ValidationError):  # Pydantic validation error
         # Try to create document without required fields
-        invalid_key = APIKeyDocument(
+        APIKeyDocument(
             id="test-key",
             # Missing key_material, provider_id, state, etc.
         )

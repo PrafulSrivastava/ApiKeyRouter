@@ -1,7 +1,6 @@
 """Tests for CostController component."""
 
 from decimal import Decimal
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -10,9 +9,7 @@ from apikeyrouter.domain.interfaces.observability_manager import ObservabilityMa
 from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
 from apikeyrouter.domain.interfaces.state_store import StateStore
 from apikeyrouter.domain.models.budget import Budget, BudgetScope, EnforcementMode
-from apikeyrouter.domain.models.budget_check_result import BudgetCheckResult
 from apikeyrouter.domain.models.cost_estimate import CostEstimate
-from apikeyrouter.domain.models.cost_reconciliation import CostReconciliation
 from apikeyrouter.domain.models.quota_state import TimeWindow
 from apikeyrouter.domain.models.request_intent import Message, RequestIntent
 from apikeyrouter.domain.models.system_error import ErrorCategory, SystemError
@@ -744,7 +741,7 @@ class TestCostControllerBudgetManagement:
             period=TimeWindow.Monthly,
             scope_id="openai",
         )
-        budget3 = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.PerProvider,
             limit=Decimal("30.00"),
             period=TimeWindow.Daily,
@@ -887,7 +884,7 @@ class TestCostControllerBudgetCheck:
         )
 
         # Create budget with sufficient funds
-        budget = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.Global,
             limit=Decimal("100.00"),
             period=TimeWindow.Daily,
@@ -1023,14 +1020,14 @@ class TestCostControllerBudgetCheck:
         )
 
         # Create global budget
-        global_budget = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.Global,
             limit=Decimal("100.00"),
             period=TimeWindow.Daily,
         )
 
         # Create per-provider budget
-        provider_budget = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.PerProvider,
             limit=Decimal("50.00"),
             period=TimeWindow.Daily,
@@ -1129,7 +1126,7 @@ class TestCostControllerBudgetCheck:
         )
 
         # Create per-key budget
-        key_budget = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.PerKey,
             limit=Decimal("25.00"),
             period=TimeWindow.Daily,
@@ -1259,7 +1256,7 @@ class TestCostControllerBudgetCheck:
             observability_manager=observability,
         )
 
-        budget = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.Global,
             limit=Decimal("100.00"),
             period=TimeWindow.Daily,

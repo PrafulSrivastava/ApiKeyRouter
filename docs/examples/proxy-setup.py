@@ -20,8 +20,8 @@ Or use uvicorn directly: uvicorn apikeyrouter_proxy.main:app --reload
 """
 
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 # This script demonstrates proxy setup
@@ -29,16 +29,16 @@ from pathlib import Path
 
 def print_setup_instructions():
     """Print setup instructions for the proxy service."""
-    
+
     print("=" * 80)
     print("ApiKeyRouter Proxy Service Setup")
     print("=" * 80)
     print()
-    
+
     # ============================================================================
     # Step 1: Environment Variables
     # ============================================================================
-    
+
     print("Step 1: Configure Environment Variables")
     print("-" * 80)
     print()
@@ -65,11 +65,11 @@ def print_setup_instructions():
     print("LOG_LEVEL=INFO")
     print("METRICS_ENABLED=true")
     print()
-    
+
     # ============================================================================
     # Step 2: Starting the Proxy
     # ============================================================================
-    
+
     print("Step 2: Starting the Proxy Service")
     print("-" * 80)
     print()
@@ -86,11 +86,11 @@ def print_setup_instructions():
     print("The proxy will be available at: http://localhost:8000")
     print("API documentation: http://localhost:8000/docs")
     print()
-    
+
     # ============================================================================
     # Step 3: Register Keys via Management API
     # ============================================================================
-    
+
     print("Step 3: Register Keys via Management API")
     print("-" * 80)
     print()
@@ -101,7 +101,7 @@ def print_setup_instructions():
     print("  -H 'X-API-Key: your-management-key' \\")
     print("  -H 'Content-Type: application/json' \\")
     print("  -d '{")
-    print('    "key_material": "sk-your-openai-key",')
+    print('    "key_material": "your-actual-openai-key-here",')
     print('    "provider_id": "openai",')
     print('    "metadata": {"tier": "premium"}')
     print("  }'")
@@ -119,7 +119,7 @@ def print_setup_instructions():
     print("        'Content-Type': 'application/json'")
     print("    },")
     print("    json={")
-    print("        'key_material': 'sk-your-openai-key',")
+    print("        'key_material': 'your-actual-openai-key-here',")
     print("        'provider_id': 'openai',")
     print("        'metadata': {'tier': 'premium'}")
     print("    }")
@@ -127,11 +127,11 @@ def print_setup_instructions():
     print("print(response.json())")
     print("```")
     print()
-    
+
     # ============================================================================
     # Step 4: Using OpenAI-Compatible Endpoints
     # ============================================================================
-    
+
     print("Step 4: Using OpenAI-Compatible Endpoints")
     print("-" * 80)
     print()
@@ -170,11 +170,11 @@ def print_setup_instructions():
     print("print(response.choices[0].message.content)")
     print("```")
     print()
-    
+
     # ============================================================================
     # Step 5: Docker Setup (Optional)
     # ============================================================================
-    
+
     print("Step 5: Docker Setup (Optional)")
     print("-" * 80)
     print()
@@ -207,11 +207,11 @@ def print_setup_instructions():
     print("  docker build -t apikeyrouter-proxy .")
     print("  docker run -p 8000:8000 -e APIKEYROUTER_ENCRYPTION_KEY=your-key apikeyrouter-proxy")
     print()
-    
+
     # ============================================================================
     # Step 6: Health Checks
     # ============================================================================
-    
+
     print("Step 6: Health Checks")
     print("-" * 80)
     print()
@@ -231,7 +231,7 @@ def print_setup_instructions():
     print("}")
     print("```")
     print()
-    
+
     print("=" * 80)
     print("Setup complete!")
     print("=" * 80)
@@ -247,18 +247,18 @@ def print_setup_instructions():
 def start_proxy():
     """Start the proxy service (if running as main script)."""
     proxy_dir = Path(__file__).parent.parent.parent / "packages" / "proxy"
-    
+
     if not proxy_dir.exists():
         print("Error: Proxy package not found. Please run from project root.")
         sys.exit(1)
-    
+
     print("Starting ApiKeyRouter proxy service...")
     print(f"Working directory: {proxy_dir}")
     print()
-    
+
     # Change to proxy directory and run uvicorn
     os.chdir(proxy_dir)
-    
+
     try:
         subprocess.run([
             sys.executable, "-m", "uvicorn",

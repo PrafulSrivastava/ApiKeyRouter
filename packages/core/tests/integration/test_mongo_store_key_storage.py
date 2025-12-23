@@ -14,22 +14,22 @@ from apikeyrouter.infrastructure.state_store.mongo_store import MongoStateStore
 async def mongodb_database():
     """Create MongoDB database for testing."""
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    
+
     # Check if MongoDB is available
     try:
         client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
         await client.admin.command("ping")
     except Exception:
         pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
-    
+
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_keys"]
+    from contextlib import suppress
+
     yield database
     # Cleanup: drop test database
-    try:
-        await client.drop_database("test_apikeyrouter_keys")
-    except Exception:
-        pass  # Ignore cleanup errors
+    with suppress(Exception):
+        await client.drop_database("test_apikeyrouter_keys")  # Ignore cleanup errors
     client.close()
 
 

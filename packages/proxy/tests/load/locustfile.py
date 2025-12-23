@@ -20,10 +20,8 @@ Usage:
 """
 
 import random
-import time
-from typing import Any
 
-from locust import HttpUser, TaskSet, between, task, tag
+from locust import HttpUser, TaskSet, between, tag, task
 
 
 class ChatCompletionsTasks(TaskSet):

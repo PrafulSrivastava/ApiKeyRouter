@@ -2,9 +2,8 @@
 
 from datetime import datetime
 
-from pydantic import ValidationError
-
 import pytest
+from pydantic import ValidationError
 
 from apikeyrouter.domain.models.cost_estimate import CostEstimate
 from apikeyrouter.domain.models.system_response import (
@@ -41,7 +40,7 @@ class TestTokenUsage:
         assert usage.input_tokens == 0
 
         # Invalid - negative not allowed
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(ValidationError):  # Pydantic validation error
             TokenUsage(input_tokens=-1, output_tokens=0)
 
 
@@ -84,7 +83,7 @@ class TestResponseMetadata:
     def test_response_metadata_model_validation(self) -> None:
         """Test that model_used is validated."""
         tokens = TokenUsage(input_tokens=100, output_tokens=50)
-        
+
         # Valid model
         metadata = ResponseMetadata(
             model_used="gpt-4",
@@ -108,7 +107,7 @@ class TestResponseMetadata:
     def test_response_metadata_provider_id_validation(self) -> None:
         """Test that provider_id is validated and lowercased."""
         tokens = TokenUsage(input_tokens=100, output_tokens=50)
-        
+
         metadata = ResponseMetadata(
             model_used="gpt-4",
             tokens_used=tokens,
@@ -131,7 +130,7 @@ class TestResponseMetadata:
     def test_response_metadata_response_time_validation(self) -> None:
         """Test that response_time_ms cannot be negative."""
         tokens = TokenUsage(input_tokens=100, output_tokens=50)
-        
+
         # Valid - zero is allowed
         metadata = ResponseMetadata(
             model_used="gpt-4",
@@ -143,7 +142,7 @@ class TestResponseMetadata:
         assert metadata.response_time_ms == 0
 
         # Invalid - negative not allowed
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(ValidationError):  # Pydantic validation error
             ResponseMetadata(
                 model_used="gpt-4",
                 tokens_used=tokens,
@@ -309,7 +308,7 @@ class TestSystemResponse:
             key_used="key-abc",
             request_id="req-789",
         )
-        
+
         assert response.content == "The answer is 42."
         assert response.metadata.tokens_used.total_tokens == 225
         assert response.metadata.finish_reason == "stop"

@@ -6,7 +6,7 @@ are met. Fails if targets are not achieved.
 Usage:
     locust -f locustfile.py --host=http://localhost:8000 --headless \
         --users 100 --spawn-rate 10 --run-time 5m --csv=results
-    
+
     python check_load_test_results.py results_stats.csv
 """
 
@@ -14,7 +14,6 @@ import csv
 import sys
 from pathlib import Path
 from typing import Any
-
 
 # Performance targets
 PERFORMANCE_TARGETS = {
@@ -138,7 +137,7 @@ def print_summary(stats: dict[str, Any]) -> None:
         error_rate = stats["total_failures"] / stats["total_requests"]
         print(f"Error Rate:         {error_rate:.2%}")
     print(f"Requests/Second:    {stats['total_rps']:.2f}")
-    print(f"\nLatency Percentiles:")
+    print("\nLatency Percentiles:")
     print(f"  p50:              {stats['p50_ms']:.2f}ms")
     print(f"  p95:              {stats['p95_ms']:.2f}ms")
     print(f"  p99:              {stats['p99_ms']:.2f}ms")

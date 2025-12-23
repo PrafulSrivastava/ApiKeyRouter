@@ -1,15 +1,15 @@
 """Integration tests for cost control and budget enforcement."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
 
 from apikeyrouter.domain.components.cost_controller import CostController
 from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
-from apikeyrouter.domain.models.budget import Budget, BudgetScope, EnforcementMode
-from apikeyrouter.domain.models.request_intent import Message, RequestIntent
+from apikeyrouter.domain.models.budget import BudgetScope, EnforcementMode
 from apikeyrouter.domain.models.quota_state import TimeWindow
+from apikeyrouter.domain.models.request_intent import Message, RequestIntent
 from apikeyrouter.domain.models.system_response import ResponseMetadata, SystemResponse, TokenUsage
 from apikeyrouter.infrastructure.state_store.memory_store import InMemoryStateStore
 from apikeyrouter.router import ApiKeyRouter
@@ -102,7 +102,6 @@ def mock_adapter() -> MockProviderAdapter:
 @pytest.fixture
 async def router_with_cost_controller(api_key_router, mock_adapter):
     """Create router with CostController integrated."""
-    from apikeyrouter.infrastructure.observability.logger import DefaultObservabilityManager
 
     # Register provider
     await api_key_router.register_provider("openai", mock_adapter)
@@ -179,7 +178,7 @@ class TestCostControlAndBudgetEnforcement:
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        key = await router.register_key(
+        await router.register_key(
             key_material="sk-test-key-1", provider_id="openai"
         )
 
@@ -277,7 +276,7 @@ class TestCostControlAndBudgetEnforcement:
             provider_id="openai",
             key_id=key.id,
         )
-        
+
         # Record estimated cost for reconciliation
         await cost_controller.record_estimated_cost(
             request_id="test-request-1",
@@ -319,7 +318,7 @@ class TestCostControlAndBudgetEnforcement:
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        key = await router.register_key(
+        await router.register_key(
             key_material="sk-test-key-1", provider_id="openai"
         )
 

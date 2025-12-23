@@ -16,21 +16,21 @@ SETUP INSTRUCTIONS:
 -------------------
 To use this example with real API keys, set the following environment variables:
 
-  export OPENAI_KEY_1=sk-your-actual-openai-key-1
-  export OPENAI_KEY_2=sk-your-actual-openai-key-2
-  export OPENAI_KEY_3=sk-your-actual-openai-key-3
-  export OPENAI_KEY_4=sk-your-actual-openai-key-4
-  export ANTHROPIC_KEY_1=sk-your-actual-anthropic-key-1
-  export ANTHROPIC_KEY_2=sk-your-actual-anthropic-key-2
+  export OPENAI_KEY_1=your-actual-openai-key-1-here
+  export OPENAI_KEY_2=your-actual-openai-key-2-here
+  export OPENAI_KEY_3=your-actual-openai-key-3-here
+  export OPENAI_KEY_4=your-actual-openai-key-4-here
+  export ANTHROPIC_KEY_1=your-actual-anthropic-key-1-here
+  export ANTHROPIC_KEY_2=your-actual-anthropic-key-2-here
 
 Or create a .env file in the project root:
   
-  OPENAI_KEY_1=sk-your-actual-openai-key-1
-  OPENAI_KEY_2=sk-your-actual-openai-key-2
-  OPENAI_KEY_3=sk-your-actual-openai-key-3
-  OPENAI_KEY_4=sk-your-actual-openai-key-4
-  ANTHROPIC_KEY_1=sk-your-actual-anthropic-key-1
-  ANTHROPIC_KEY_2=sk-your-actual-anthropic-key-2
+  OPENAI_KEY_1=your-actual-openai-key-1-here
+  OPENAI_KEY_2=your-actual-openai-key-2-here
+  OPENAI_KEY_3=your-actual-openai-key-3-here
+  OPENAI_KEY_4=your-actual-openai-key-4-here
+  ANTHROPIC_KEY_1=your-actual-anthropic-key-1-here
+  ANTHROPIC_KEY_2=your-actual-anthropic-key-2-here
 
 If you use a .env file, you can load it with python-dotenv:
   from dotenv import load_dotenv
@@ -42,14 +42,12 @@ which demonstrate the structure but won't work for actual API calls.
 
 import asyncio
 import os
-from decimal import Decimal
 from datetime import datetime, timedelta
-from typing import Any
 
 from apikeyrouter import ApiKeyRouter
-from apikeyrouter.domain.models.routing import RoutingObjective, ObjectiveType
-from apikeyrouter.domain.models.policy import Policy, PolicyType, PolicyScope
-from apikeyrouter.domain.models.quota import TimeWindow, CapacityState
+from apikeyrouter.domain.models.policy import Policy, PolicyScope, PolicyType
+from apikeyrouter.domain.models.quota import TimeWindow
+from apikeyrouter.domain.models.routing import ObjectiveType, RoutingObjective
 
 
 def load_api_keys_from_env():
@@ -61,8 +59,8 @@ def load_api_keys_from_env():
     - ANTHROPIC_KEY_1, ANTHROPIC_KEY_2
     
     Or use a .env file with:
-    OPENAI_KEY_1=sk-your-actual-openai-key-1
-    OPENAI_KEY_2=sk-your-actual-openai-key-2
+    OPENAI_KEY_1=your-actual-openai-key-1-here
+    OPENAI_KEY_2=your-actual-openai-key-2-here
     ...
     
     If environment variables are not set, the example will use placeholder keys
@@ -73,14 +71,14 @@ def load_api_keys_from_env():
     """
     return {
         "openai": [
-            ("premium-1", os.getenv("OPENAI_KEY_1", "sk-openai-premium-1-placeholder")),
-            ("premium-2", os.getenv("OPENAI_KEY_2", "sk-openai-premium-2-placeholder")),
-            ("paygo-1", os.getenv("OPENAI_KEY_3", "sk-openai-paygo-1-placeholder")),
-            ("paygo-2", os.getenv("OPENAI_KEY_4", "sk-openai-paygo-2-placeholder")),
+            ("premium-1", os.getenv("OPENAI_KEY_1", "sk-example-openai-premium-1-not-real")),
+            ("premium-2", os.getenv("OPENAI_KEY_2", "sk-example-openai-premium-2-not-real")),
+            ("paygo-1", os.getenv("OPENAI_KEY_3", "sk-example-openai-paygo-1-not-real")),
+            ("paygo-2", os.getenv("OPENAI_KEY_4", "sk-example-openai-paygo-2-not-real")),
         ],
         "anthropic": [
-            ("premium-1", os.getenv("ANTHROPIC_KEY_1", "sk-ant-premium-1-placeholder")),
-            ("premium-2", os.getenv("ANTHROPIC_KEY_2", "sk-ant-premium-2-placeholder")),
+            ("premium-1", os.getenv("ANTHROPIC_KEY_1", "sk-example-ant-premium-1-not-real")),
+            ("premium-2", os.getenv("ANTHROPIC_KEY_2", "sk-example-ant-premium-2-not-real")),
         ]
     }
 
@@ -89,42 +87,42 @@ async def comprehensive_example():
     """
     Comprehensive example demonstrating all ApiKeyRouter capabilities.
     """
-    
+
     # ============================================================================
     # PART 1: INITIALIZATION AND SETUP
     # ============================================================================
-    
+
     print("=" * 80)
     print("PART 1: INITIALIZATION AND SETUP")
     print("=" * 80)
-    
+
     # Initialize the router
     router = ApiKeyRouter()
-    
+
     # Register multiple providers
-    from apikeyrouter.adapters import OpenAIAdapter, AnthropicAdapter
-    
+    from apikeyrouter.adapters import AnthropicAdapter, OpenAIAdapter
+
     router.register_provider("openai", OpenAIAdapter())
     router.register_provider("anthropic", AnthropicAdapter())
-    
+
     print("✓ Registered providers: OpenAI, Anthropic")
-    
+
     # ============================================================================
     # PART 2: KEY REGISTRATION WITH METADATA
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 2: KEY REGISTRATION WITH METADATA")
     print("=" * 80)
-    
+
     # Load API keys from environment variables (or use placeholders)
     # IMPORTANT: Set your actual API keys as environment variables:
-    #   export OPENAI_KEY_1=sk-your-actual-key-1
-    #   export OPENAI_KEY_2=sk-your-actual-key-2
+    #   export OPENAI_KEY_1=your-actual-key-1-here
+    #   export OPENAI_KEY_2=your-actual-key-2-here
     #   etc.
     # Or use a .env file with python-dotenv
     api_keys = load_api_keys_from_env()
-    
+
     # Check if we're using placeholder keys
     using_placeholders = any("placeholder" in key_material for keys in api_keys.values() for _, key_material in keys)
     if using_placeholders:
@@ -132,7 +130,7 @@ async def comprehensive_example():
         print("   OPENAI_KEY_1, OPENAI_KEY_2, OPENAI_KEY_3, OPENAI_KEY_4")
         print("   ANTHROPIC_KEY_1, ANTHROPIC_KEY_2")
         print("   Or create a .env file with your actual keys.\n")
-    
+
     # Define key configurations with metadata
     # The actual key material comes from environment variables
     key_configs = [
@@ -218,7 +216,7 @@ async def comprehensive_example():
             }
         }
     ]
-    
+
     # Register all keys
     registered_keys = {}
     for config in key_configs:
@@ -234,22 +232,22 @@ async def comprehensive_example():
         print(f"✓ Registered {config['provider_id']} key: {key.id} "
               f"(key: {masked_key}, tier: {config['metadata']['tier']}, "
               f"team: {config['metadata']['team']})")
-    
+
     print(f"\n✓ Total keys registered: {len(registered_keys)}")
-    
+
     # ============================================================================
     # PART 3: QUOTA CONFIGURATION
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 3: QUOTA CONFIGURATION")
     print("=" * 80)
-    
+
     # Configure quota awareness for each key
     # Premium keys have monthly quotas, paygo keys have daily quotas
     for key_id, key in registered_keys.items():
         metadata = key.metadata
-        
+
         if metadata.get("tier") == "premium":
             # Monthly quota window
             router.configure_quota(
@@ -268,15 +266,15 @@ async def comprehensive_example():
                 reset_at=datetime.now().replace(hour=0, minute=0, second=0) + timedelta(days=1)
             )
             print(f"✓ Configured daily quota for {key_id}: {metadata.get('monthly_limit')} tokens")
-    
+
     # ============================================================================
     # PART 4: POLICY CONFIGURATION
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 4: POLICY CONFIGURATION")
     print("=" * 80)
-    
+
     # Policy 1: Cost optimization for development team
     cost_optimization_policy = Policy(
         name="development_cost_optimization",
@@ -294,7 +292,7 @@ async def comprehensive_example():
     )
     router.configure_policy(cost_optimization_policy)
     print("✓ Configured cost optimization policy for development team")
-    
+
     # Policy 2: Reliability-first for production team
     reliability_policy = Policy(
         name="production_reliability",
@@ -313,7 +311,7 @@ async def comprehensive_example():
     )
     router.configure_policy(reliability_policy)
     print("✓ Configured reliability-first policy for production team")
-    
+
     # Policy 3: Budget enforcement
     budget_policy = Policy(
         name="monthly_budget_limit",
@@ -332,7 +330,7 @@ async def comprehensive_example():
     )
     router.configure_policy(budget_policy)
     print("✓ Configured monthly budget limit: $1000")
-    
+
     # Policy 4: Key selection constraints
     key_selection_policy = Policy(
         name="prefer_regional_keys",
@@ -349,15 +347,15 @@ async def comprehensive_example():
     )
     router.configure_policy(key_selection_policy)
     print("✓ Configured regional preference policy")
-    
+
     # ============================================================================
     # PART 5: ROUTING WITH DIFFERENT OBJECTIVES
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 5: ROUTING WITH DIFFERENT OBJECTIVES")
     print("=" * 80)
-    
+
     # Example request intent
     request_intent = {
         "provider_id": "openai",
@@ -369,7 +367,7 @@ async def comprehensive_example():
         "temperature": 0.7,
         "max_tokens": 500
     }
-    
+
     # 5.1: Cost-optimized routing
     print("\n--- 5.1: Cost-Optimized Routing ---")
     cost_objective = RoutingObjective(
@@ -377,19 +375,19 @@ async def comprehensive_example():
         secondary=ObjectiveType.Reliability.value,
         weights={"cost": 0.8, "reliability": 0.2}
     )
-    
+
     response = await router.route(
         request_intent=request_intent,
         objective=cost_objective
     )
-    
+
     print(f"Response: {response.content[:100]}...")
     print(f"Key used: {response.metadata.key_used}")
     print(f"Provider: {response.metadata.provider_used}")
     print(f"Estimated cost: ${response.metadata.cost_estimated:.4f}")
     print(f"Actual cost: ${response.metadata.cost_actual:.4f}")
     print(f"Routing explanation: {response.metadata.routing_explanation}")
-    
+
     # 5.2: Reliability-optimized routing
     print("\n--- 5.2: Reliability-Optimized Routing ---")
     reliability_objective = RoutingObjective(
@@ -397,22 +395,22 @@ async def comprehensive_example():
         secondary=ObjectiveType.Cost.value,
         weights={"reliability": 0.9, "cost": 0.1}
     )
-    
+
     response = await router.route(
         request_intent=request_intent,
         objective=reliability_objective
     )
-    
+
     print(f"Response: {response.content[:100]}...")
     print(f"Key used: {response.metadata.key_used}")
     print(f"Routing explanation: {response.metadata.routing_explanation}")
-    
+
     # 5.3: Fairness-based routing (round-robin)
     print("\n--- 5.3: Fairness-Based Routing (Round-Robin) ---")
     fairness_objective = RoutingObjective(
         primary=ObjectiveType.Fairness.value
     )
-    
+
     # Make multiple requests to see round-robin behavior
     for i in range(3):
         response = await router.route(
@@ -420,7 +418,7 @@ async def comprehensive_example():
             objective=fairness_objective
         )
         print(f"Request {i+1}: Key {response.metadata.key_used} used")
-    
+
     # 5.4: Multi-objective routing (cost + reliability + speed)
     print("\n--- 5.4: Multi-Objective Routing ---")
     multi_objective = RoutingObjective(
@@ -429,30 +427,30 @@ async def comprehensive_example():
         tertiary=ObjectiveType.Speed.value,
         weights={"cost": 0.5, "reliability": 0.3, "speed": 0.2}
     )
-    
+
     response = await router.route(
         request_intent=request_intent,
         objective=multi_objective
     )
-    
+
     print(f"Key used: {response.metadata.key_used}")
     print(f"Routing explanation: {response.metadata.routing_explanation}")
-    
+
     # ============================================================================
     # PART 6: AUTOMATIC FAILOVER AND ERROR HANDLING
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 6: AUTOMATIC FAILOVER AND ERROR HANDLING")
     print("=" * 80)
-    
+
     # Simulate a key failure scenario
     print("\n--- 6.1: Simulating Key Failure ---")
-    
+
     # Get current state
     state_summary = router.get_state_summary()
     print(f"Available keys before failure: {state_summary.keys.available}")
-    
+
     # Manually throttle a key to simulate failure
     # (In real scenario, this would happen automatically on rate limit/error)
     key_to_throttle = list(registered_keys.values())[0]
@@ -462,16 +460,16 @@ async def comprehensive_example():
         reason="Simulated rate limit for demonstration"
     )
     print(f"✓ Throttled key: {key_to_throttle.id}")
-    
+
     # Make a request - should automatically use a different key
     response = await router.route(
         request_intent=request_intent,
         objective=RoutingObjective(primary=ObjectiveType.Reliability.value)
     )
-    
+
     print(f"Request succeeded with key: {response.metadata.key_used}")
-    print(f"Failed key was automatically bypassed")
-    
+    print("Failed key was automatically bypassed")
+
     # Restore the key
     router.update_key_state(
         key_id=key_to_throttle.id,
@@ -479,19 +477,19 @@ async def comprehensive_example():
         reason="Recovery from simulated failure"
     )
     print(f"✓ Restored key: {key_to_throttle.id}")
-    
+
     # ============================================================================
     # PART 7: QUOTA AWARENESS AND CAPACITY MANAGEMENT
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 7: QUOTA AWARENESS AND CAPACITY MANAGEMENT")
     print("=" * 80)
-    
+
     # Check quota states for all keys
     print("\n--- 7.1: Current Quota States ---")
     state_summary = router.get_state_summary()
-    
+
     for key_id, key in registered_keys.items():
         quota_state = router.get_quota_state(key_id)
         if quota_state:
@@ -502,10 +500,10 @@ async def comprehensive_example():
             print(f"  Time Window: {quota_state.time_window}")
             if quota_state.exhaustion_prediction:
                 print(f"  Predicted Exhaustion: {quota_state.exhaustion_prediction.predicted_at}")
-    
+
     # Simulate high usage to trigger quota state transitions
     print("\n--- 7.2: Simulating High Usage ---")
-    
+
     # Make multiple requests to consume quota
     for i in range(5):
         response = await router.route(
@@ -515,7 +513,7 @@ async def comprehensive_example():
         # Quota is automatically updated after each request
         print(f"Request {i+1}: Used {response.metadata.tokens_used} tokens, "
               f"Cost: ${response.metadata.cost_actual:.4f}")
-    
+
     # Check quota states again
     print("\n--- 7.3: Updated Quota States ---")
     for key_id, key in registered_keys.items():
@@ -523,15 +521,15 @@ async def comprehensive_example():
         if quota_state:
             print(f"Key {key_id}: {quota_state.capacity_state} "
                   f"({quota_state.remaining_capacity} remaining)")
-    
+
     # ============================================================================
     # PART 8: COST TRACKING AND BUDGET ENFORCEMENT
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 8: COST TRACKING AND BUDGET ENFORCEMENT")
     print("=" * 80)
-    
+
     # Get budget status
     print("\n--- 8.1: Budget Status ---")
     budget_status = router.get_budget_status(scope="global")
@@ -540,7 +538,7 @@ async def comprehensive_example():
     print(f"Remaining: ${budget_status.remaining:.2f}")
     print(f"Usage percentage: {budget_status.usage_percentage:.1f}%")
     print(f"Status: {budget_status.status}")
-    
+
     # Make a request with cost estimation
     print("\n--- 8.2: Cost Estimation Before Request ---")
     cost_estimate = router.estimate_request_cost(
@@ -550,7 +548,7 @@ async def comprehensive_example():
     print(f"Estimated cost: ${cost_estimate.estimated_cost:.4f}")
     print(f"Cost range: ${cost_estimate.min_cost:.4f} - ${cost_estimate.max_cost:.4f}")
     print(f"Confidence: {cost_estimate.confidence}")
-    
+
     # Check if request would exceed budget
     budget_check = router.check_budget(
         request_intent=request_intent,
@@ -559,89 +557,89 @@ async def comprehensive_example():
     print(f"Budget check: {'Allowed' if budget_check.allowed else 'Blocked'}")
     if not budget_check.allowed:
         print(f"Reason: {budget_check.reason}")
-    
+
     # ============================================================================
     # PART 9: KEY LIFECYCLE MANAGEMENT
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 9: KEY LIFECYCLE MANAGEMENT")
     print("=" * 80)
-    
+
     # 9.1: Key rotation
     print("\n--- 9.1: Key Rotation ---")
     key_to_rotate = list(registered_keys.values())[0]
-    new_key_material = "sk-openai-rotated-new-key"
-    
+    new_key_material = "sk-example-rotated-key-not-real"
+
     rotated_key = router.rotate_key(
         old_key_id=key_to_rotate.id,
         new_key_material=new_key_material
     )
-    
+
     print(f"✓ Rotated key {key_to_rotate.id} to new key {rotated_key.id}")
-    print(f"  Old key state: Disabled")
+    print("  Old key state: Disabled")
     print(f"  New key state: {rotated_key.state}")
-    print(f"  Usage history preserved")
-    
+    print("  Usage history preserved")
+
     # 9.2: Key revocation
     print("\n--- 9.2: Key Revocation ---")
     key_to_revoke = list(registered_keys.values())[1]
-    
+
     router.revoke_key(key_id=key_to_revoke.id)
     print(f"✓ Revoked key: {key_to_revoke.id}")
-    print(f"  Key state: Disabled")
-    print(f"  Key excluded from routing")
-    
+    print("  Key state: Disabled")
+    print("  Key excluded from routing")
+
     # Verify key is excluded
     state_summary = router.get_state_summary()
     print(f"Available keys after revocation: {state_summary.keys.available}")
-    
+
     # ============================================================================
     # PART 10: OBSERVABILITY AND STATE INSPECTION
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 10: OBSERVABILITY AND STATE INSPECTION")
     print("=" * 80)
-    
+
     # 10.1: System state summary
     print("\n--- 10.1: System State Summary ---")
     state_summary = router.get_state_summary()
-    
-    print(f"Keys:")
+
+    print("Keys:")
     print(f"  Total: {state_summary.keys.total}")
     print(f"  Available: {state_summary.keys.available}")
     print(f"  Throttled: {state_summary.keys.throttled}")
     print(f"  Exhausted: {state_summary.keys.exhausted}")
     print(f"  Disabled: {state_summary.keys.disabled}")
-    
-    print(f"\nQuotas:")
+
+    print("\nQuotas:")
     print(f"  Total keys tracked: {state_summary.quotas.total_keys}")
     print(f"  Exhausted keys: {state_summary.quotas.exhausted_keys}")
     print(f"  Critical keys: {state_summary.quotas.critical_keys}")
     print(f"  Constrained keys: {state_summary.quotas.constrained_keys}")
-    
-    print(f"\nRouting:")
+
+    print("\nRouting:")
     print(f"  Total decisions: {state_summary.routing.total_decisions}")
     print(f"  Recent decisions: {len(state_summary.routing.recent_decisions)}")
-    
+
     # 10.2: Request trace
     print("\n--- 10.2: Request Trace ---")
     # Get trace for the last request
     if state_summary.routing.recent_decisions:
         last_decision = state_summary.routing.recent_decisions[0]
         trace = router.get_request_trace(request_id=last_decision.request_id)
-        
+
         print(f"Request ID: {trace.request_id}")
         print(f"Correlation ID: {trace.correlation_id}")
         print(f"Timestamp: {trace.timestamp}")
-        print(f"Routing Decision:")
+        print("Routing Decision:")
         print(f"  Key selected: {trace.routing_decision.key_id}")
         print(f"  Provider: {trace.routing_decision.provider_id}")
         print(f"  Objective: {trace.routing_decision.objective}")
         print(f"  Explanation: {trace.routing_decision.explanation}")
         print(f"State Transitions: {len(trace.state_transitions)}")
-    
+
     # 10.3: Key details
     print("\n--- 10.3: Key Details ---")
     for key_id, key in list(registered_keys.items())[:2]:  # Show first 2 keys
@@ -655,15 +653,15 @@ async def comprehensive_example():
             print(f"  Usage count: {key_details.usage_count}")
             print(f"  Failure count: {key_details.failure_count}")
             print(f"  Metadata: {key_details.metadata}")
-    
+
     # ============================================================================
     # PART 11: MULTI-PROVIDER ROUTING
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 11: MULTI-PROVIDER ROUTING")
     print("=" * 80)
-    
+
     # Route to different providers
     print("\n--- 11.1: OpenAI Request ---")
     openai_request = {
@@ -677,7 +675,7 @@ async def comprehensive_example():
     )
     print(f"Provider: {response.metadata.provider_used}")
     print(f"Response: {response.content[:50]}...")
-    
+
     print("\n--- 11.2: Anthropic Request ---")
     anthropic_request = {
         "provider_id": "anthropic",
@@ -690,15 +688,15 @@ async def comprehensive_example():
     )
     print(f"Provider: {response.metadata.provider_used}")
     print(f"Response: {response.content[:50]}...")
-    
+
     # ============================================================================
     # PART 12: BATCH REQUESTS AND CONCURRENT PROCESSING
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 12: BATCH REQUESTS AND CONCURRENT PROCESSING")
     print("=" * 80)
-    
+
     # Make multiple concurrent requests
     print("\n--- 12.1: Concurrent Requests ---")
     requests = [
@@ -709,7 +707,7 @@ async def comprehensive_example():
         }
         for i in range(5)
     ]
-    
+
     # Execute concurrently
     tasks = [
         router.route(
@@ -718,22 +716,22 @@ async def comprehensive_example():
         )
         for req in requests
     ]
-    
+
     responses = await asyncio.gather(*tasks)
-    
+
     print(f"✓ Completed {len(responses)} concurrent requests")
     for i, response in enumerate(responses):
         print(f"  Request {i+1}: Key {response.metadata.key_used}, "
               f"Cost: ${response.metadata.cost_actual:.4f}")
-    
+
     # ============================================================================
     # PART 13: POLICY-DRIVEN ROUTING
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("PART 13: POLICY-DRIVEN ROUTING")
     print("=" * 80)
-    
+
     # Make requests with different team contexts to trigger different policies
     print("\n--- 13.1: Development Team Request (Cost-Optimized) ---")
     dev_request = {
@@ -747,7 +745,7 @@ async def comprehensive_example():
     print(f"Key used: {response.metadata.key_used}")
     print(f"Cost: ${response.metadata.cost_actual:.4f}")
     print(f"Explanation: {response.metadata.routing_explanation}")
-    
+
     print("\n--- 13.2: Production Team Request (Reliability-First) ---")
     prod_request = {
         **request_intent,
@@ -760,27 +758,27 @@ async def comprehensive_example():
     print(f"Key used: {response.metadata.key_used}")
     print(f"Cost: ${response.metadata.cost_actual:.4f}")
     print(f"Explanation: {response.metadata.routing_explanation}")
-    
+
     # ============================================================================
     # SUMMARY
     # ============================================================================
-    
+
     print("\n" + "=" * 80)
     print("SUMMARY")
     print("=" * 80)
-    
+
     final_state = router.get_state_summary()
-    print(f"\nFinal System State:")
+    print("\nFinal System State:")
     print(f"  Total keys: {final_state.keys.total}")
     print(f"  Available keys: {final_state.keys.available}")
     print(f"  Total routing decisions: {final_state.routing.total_decisions}")
-    
+
     budget_status = router.get_budget_status(scope="global")
-    print(f"\nBudget Status:")
+    print("\nBudget Status:")
     print(f"  Total spent: ${budget_status.total_spent:.2f}")
     print(f"  Remaining: ${budget_status.remaining:.2f}")
     print(f"  Usage: {budget_status.usage_percentage:.1f}%")
-    
+
     print("\n✓ Comprehensive example completed successfully!")
     print("=" * 80)
 
@@ -796,12 +794,12 @@ async def proxy_mode_example():
     print("\n" + "=" * 80)
     print("PROXY MODE EXAMPLE")
     print("=" * 80)
-    
+
     import httpx
-    
+
     # Proxy service is running on localhost:8000
     base_url = "http://localhost:8000"
-    
+
     # Example 1: OpenAI-compatible chat completion
     print("\n--- Proxy: Chat Completion ---")
     async with httpx.AsyncClient() as client:
@@ -818,7 +816,7 @@ async def proxy_mode_example():
         print(f"Response: {result['choices'][0]['message']['content']}")
         print(f"Key used: {response.headers.get('X-Key-Used')}")
         print(f"Cost: ${result.get('routing_metadata', {}).get('cost_estimated', 0):.4f}")
-    
+
     # Example 2: Get system state
     print("\n--- Proxy: System State ---")
     async with httpx.AsyncClient() as client:
@@ -829,7 +827,7 @@ async def proxy_mode_example():
         state = response.json()
         print(f"Available keys: {state['keys']['available']}")
         print(f"Total decisions: {state['routing']['total_decisions']}")
-    
+
     # Example 3: Register a new key via API
     print("\n--- Proxy: Register Key ---")
     async with httpx.AsyncClient() as client:
@@ -837,7 +835,7 @@ async def proxy_mode_example():
             f"{base_url}/api/v1/keys",
             headers={"X-API-Key": "your-management-api-key"},
             json={
-                "key_material": "sk-new-key",
+                "key_material": "sk-example-new-key-not-real",
                 "provider_id": "openai",
                 "metadata": {"tier": "premium"}
             }
@@ -849,7 +847,7 @@ async def proxy_mode_example():
 if __name__ == "__main__":
     # Run comprehensive example
     asyncio.run(comprehensive_example())
-    
+
     # Uncomment to run proxy mode example (requires proxy service running)
     # asyncio.run(proxy_mode_example())
 

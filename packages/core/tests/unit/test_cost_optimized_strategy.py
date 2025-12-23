@@ -90,10 +90,11 @@ def mock_observability() -> MockObservabilityManager:
 @pytest.fixture
 def mock_quota_engine():
     """Create mock quota awareness engine."""
+    from datetime import datetime, timedelta
+
     from apikeyrouter.domain.components.quota_awareness_engine import (
         QuotaAwarenessEngine,
     )
-    from datetime import datetime, timedelta
 
     engine = AsyncMock(spec=QuotaAwarenessEngine)
 
@@ -142,6 +143,7 @@ def sample_request_intent() -> RequestIntent:
 async def sample_keys() -> list[APIKey]:
     """Create sample keys for testing."""
     import os
+
     from cryptography.fernet import Fernet
 
     # Ensure encryption key is set for this fixture
@@ -423,7 +425,6 @@ async def test_generate_explanation_includes_alternatives(
     cost_strategy, sample_request_intent
 ):
     """Test that explanation includes cost comparison with alternatives."""
-    from datetime import datetime, timedelta
 
     cost_estimate = CostEstimate(
         amount=Decimal("0.01"),

@@ -1,5 +1,6 @@
 """Pytest configuration and shared fixtures."""
 import os
+from contextlib import suppress
 from pathlib import Path
 
 import pytest
@@ -41,10 +42,8 @@ def ensure_encryption_key():
 
 
 # Import test fixtures to make them available globally (optional - may fail if optional deps missing)
-try:
+with suppress(ImportError):
     from .fixtures import test_data  # noqa: F401, E402
-except ImportError:
     # Fixtures may not be available if optional dependencies (motor, etc.) are missing
     # This is fine - tests that need fixtures can import them directly
-    pass
 

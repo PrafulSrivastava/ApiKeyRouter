@@ -9,19 +9,12 @@ from apikeyrouter.domain.components.key_manager import (
     KeyManager,
     KeyRegistrationError,
 )
-from apikeyrouter.domain.components.routing_engine import NoEligibleKeysError
 from apikeyrouter.domain.components.quota_awareness_engine import QuotaAwarenessEngine
-from apikeyrouter.domain.components.routing_engine import RoutingEngine
+from apikeyrouter.domain.components.routing_engine import NoEligibleKeysError, RoutingEngine
 from apikeyrouter.domain.interfaces.observability_manager import ObservabilityManager
 from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
 from apikeyrouter.domain.interfaces.state_store import StateStore
 from apikeyrouter.domain.models.api_key import APIKey
-from apikeyrouter.domain.models.request_intent import Message, RequestIntent
-from apikeyrouter.domain.models.routing_decision import (
-    ObjectiveType,
-    RoutingDecision,
-    RoutingObjective,
-)
 from apikeyrouter.domain.models.system_error import ErrorCategory, SystemError
 from apikeyrouter.domain.models.system_response import (
     ResponseMetadata,
@@ -308,9 +301,7 @@ class MockProviderAdapter(ProviderAdapter):
         from datetime import datetime
 
         from apikeyrouter.domain.models.system_response import (
-            ResponseMetadata,
             SystemResponse,
-            TokenUsage,
         )
 
         return SystemResponse(
@@ -927,8 +918,8 @@ class TestApiKeyRouterRouteMethod:
 
         adapter = RetryableFailingAdapter()
         await router.register_provider("test_provider", adapter)
-        key1 = await router.register_key("sk-test-key-1", "test_provider")
-        key2 = await router.register_key("sk-test-key-2", "test_provider")
+        await router.register_key("sk-test-key-1", "test_provider")
+        await router.register_key("sk-test-key-2", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -1080,8 +1071,8 @@ class TestApiKeyRouterRouteMethod:
 
         adapter = NonRetryableFailingAdapter()
         await router.register_provider("test_provider", adapter)
-        key1 = await router.register_key("sk-test-key-1", "test_provider")
-        key2 = await router.register_key("sk-test-key-2", "test_provider")
+        await router.register_key("sk-test-key-1", "test_provider")
+        await router.register_key("sk-test-key-2", "test_provider")
 
         intent = {
             "model": "test-model",
@@ -1219,7 +1210,7 @@ class TestApiKeyRouterObservabilityIntegration:
             "provider_id": "test_provider",
         }
 
-        response = await router.route(intent)
+        await router.route(intent)
 
         # Check that completion was logged
         completion_logs = [
@@ -1278,9 +1269,8 @@ class TestApiKeyRouterObservabilityIntegration:
 
         # Check that all logs have correlation_id
         for log in mock_obs.logs:
-            if "context" in log and log["context"]:
+            if "context" in log and log["context"] and "correlation_id" in log["context"]:
                 # Some logs might not have context, that's okay
-                if "correlation_id" in log["context"]:
                     assert log["context"]["correlation_id"] is not None
                     assert isinstance(log["context"]["correlation_id"], str)
 

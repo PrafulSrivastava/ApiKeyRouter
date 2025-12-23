@@ -1,0 +1,11 @@
+# Gitleaks ignore file
+# Test files contain legitimate test fixtures that should not trigger secret scanning
+
+# Test fixtures and test data
+packages/core/tests/**/*.py
+packages/core/test_manual_example.py
+
+# Documentation examples (these are intentionally fake keys for demonstration)
+docs/examples/**/*.py
+docs/guides/**/*.md
+

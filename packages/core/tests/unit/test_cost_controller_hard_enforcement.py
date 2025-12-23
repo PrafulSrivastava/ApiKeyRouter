@@ -7,7 +7,7 @@ import pytest
 from apikeyrouter.domain.components.cost_controller import BudgetExceededError, CostController
 from apikeyrouter.domain.interfaces.observability_manager import ObservabilityManager
 from apikeyrouter.domain.interfaces.state_store import StateStore
-from apikeyrouter.domain.models.budget import Budget, BudgetScope, EnforcementMode
+from apikeyrouter.domain.models.budget import BudgetScope, EnforcementMode
 from apikeyrouter.domain.models.cost_estimate import CostEstimate
 from apikeyrouter.domain.models.quota_state import TimeWindow
 from apikeyrouter.domain.models.request_intent import Message, RequestIntent
@@ -107,7 +107,7 @@ class TestCostControllerHardEnforcement:
         )
 
         # Create budget with hard enforcement
-        budget = await controller.create_budget(
+        await controller.create_budget(
             scope=BudgetScope.Global,
             limit=Decimal("100.00"),
             period=TimeWindow.Daily,

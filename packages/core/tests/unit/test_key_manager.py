@@ -2,7 +2,6 @@
 
 import os
 import uuid
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -268,6 +267,7 @@ class TestKeyManager:
     async def test_register_key_handles_encryption_error(self) -> None:
         """Test that encryption errors are handled."""
         from unittest.mock import patch
+
         from apikeyrouter.infrastructure.utils.encryption import EncryptionError
 
         # Mock encryption service's encrypt method to raise an error
@@ -423,7 +423,7 @@ class TestKeyManagerStateManagement:
             provider_id="openai",
         )
 
-        transition = await self.key_manager.update_key_state(
+        await self.key_manager.update_key_state(
             key_id=key.id,
             new_state=KeyState.Throttled,
             reason="rate_limit",
@@ -969,7 +969,7 @@ class TestKeyManagerEligibilityFiltering:
 
         # Disable some keys to add filtering complexity
         all_keys = await self.state_store.list_keys(provider_id="openai")
-        for i, key in enumerate(all_keys[:20]):
+        for _i, key in enumerate(all_keys[:20]):
             await self.key_manager.update_key_state(
                 key_id=key.id,
                 new_state=KeyState.Disabled,
@@ -1214,7 +1214,7 @@ class TestKeyManagerRevocationAndRotation:
     @pytest.mark.asyncio
     async def test_rotate_key_handles_encryption_error(self) -> None:
         """Test that encryption errors during rotation are handled."""
-        key = await self.key_manager.register_key(
+        _key = await self.key_manager.register_key(
             key_material="sk-old-key-extra",
             provider_id="openai",
         )
@@ -1235,7 +1235,7 @@ class TestKeyManagerRevocationAndRotation:
                 from apikeyrouter.infrastructure.utils.encryption import EncryptionService
 
                 # This should fail
-                service = EncryptionService()
+                _service = EncryptionService()
         finally:
             # Restore environment
             if original_key:
@@ -1530,7 +1530,7 @@ class TestKeyManagerRevocationAndRotation:
         assert len(recovered) >= 0  # May recover key2 or neither if key1 blocks
 
         # Should have logged an error
-        error_logs = [
+        _error_logs = [
             log for log in self.observability.logs if log["level"] == "ERROR"
         ]
         # Note: The error might be logged, but recovery continues
@@ -1630,7 +1630,7 @@ class TestKeyManagerRevocationAndRotation:
         secret_key = "sk-secret-error-test-key"
 
         # Register key
-        key = await self.key_manager.register_key(
+        await self.key_manager.register_key(
             key_material=secret_key,
             provider_id="openai",
         )
@@ -1648,8 +1648,9 @@ class TestKeyManagerRevocationAndRotation:
     @pytest.mark.asyncio
     async def test_encryption_service_integration(self) -> None:
         """Test that KeyManager uses EncryptionService correctly."""
-        from apikeyrouter.infrastructure.utils.encryption import EncryptionService
         from cryptography.fernet import Fernet
+
+        from apikeyrouter.infrastructure.utils.encryption import EncryptionService
 
         # Create EncryptionService with specific key
         test_key = Fernet.generate_key()

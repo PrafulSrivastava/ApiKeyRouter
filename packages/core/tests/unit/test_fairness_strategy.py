@@ -48,10 +48,11 @@ def mock_observability() -> MockObservabilityManager:
 @pytest.fixture
 def mock_quota_engine():
     """Create mock quota awareness engine."""
+    from datetime import datetime, timedelta
+
     from apikeyrouter.domain.components.quota_awareness_engine import (
         QuotaAwarenessEngine,
     )
-    from datetime import datetime, timedelta
 
     engine = AsyncMock(spec=QuotaAwarenessEngine)
 

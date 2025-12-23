@@ -171,7 +171,7 @@ class TestEncryption:
         """Test EncryptionService with password (non-Fernet key)."""
         # Password will be derived using PBKDF2
         service = EncryptionService(encryption_key="my-password-123")
-        
+
         # Should work - password is derived to Fernet key
         original_key = "sk-test-key"
         encrypted_bytes = service.encrypt(original_key)

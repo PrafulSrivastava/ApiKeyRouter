@@ -454,7 +454,7 @@ curl -X POST http://localhost:8000/api/v1/keys \
   -H "X-API-Key: your-management-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "key_material": "sk-your-openai-key",
+    "key_material": "your-actual-openai-key-here",
     "provider_id": "openai",
     "metadata": {"tier": "pay-as-you-go"}
   }'

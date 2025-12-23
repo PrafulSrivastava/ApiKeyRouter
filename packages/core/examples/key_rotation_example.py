@@ -12,7 +12,6 @@ Scenario:
 
 import asyncio
 import os
-from datetime import datetime
 
 # Set encryption key for key material encryption (required)
 # In production, use a secure key from environment or secrets manager
@@ -163,7 +162,7 @@ async def demonstrate_key_rotation() -> None:
     key1_percentage = (key_usage.get(key1.id, 0) / total_requests * 100) if total_requests > 0 else 0
     key2_percentage = (key_usage.get(key2.id, 0) / total_requests * 100) if total_requests > 0 else 0
 
-    print(f"\nLoad Distribution:")
+    print("\nLoad Distribution:")
     print(f"  Key 1: {key_usage.get(key1.id, 0)}/{total_requests} requests ({key1_percentage:.1f}%)")
     print(f"  Key 2: {key_usage.get(key2.id, 0)}/{total_requests} requests ({key2_percentage:.1f}%)")
 
@@ -212,7 +211,7 @@ async def demonstrate_key_rotation() -> None:
         current_key2 = await key_manager.get_key(key2.id)
         if i == 0:
             print(f"\n  Before routing - Key 1 usage: {current_key1.usage_count if current_key1 else 0}, Key 2 usage: {current_key2.usage_count if current_key2 else 0}")
-        
+
         decision = await routing_engine.route_request(
             request_intent=request_intent,
             objective=fairness_objective,
@@ -239,11 +238,11 @@ async def demonstrate_key_rotation() -> None:
     print("\nFinal usage counts:")
     print(f"  Key 1: {final_key1.usage_count if final_key1 else 0} requests")
     print(f"  Key 2: {final_key2.usage_count if final_key2 else 0} requests")
-    
-    print(f"\nSelection summary in this round:")
+
+    print("\nSelection summary in this round:")
     print(f"  Key 1: {key1_selections} times")
     print(f"  Key 2: {key2_selections} times")
-    
+
     if key2_selections > key1_selections:
         print("\n[OK] Key 2 (with lower initial usage) was preferred!")
         print("     This demonstrates fairness: keys with less usage get higher scores.")

@@ -27,6 +27,8 @@ mypy = "^1.8.0"
 pre-commit = "^3.6.0"
 locust = "^2.24.1"
 python-dotenv = "^1.0.0"
+fastapi = "^0.127.0"
+uvicorn = "^0.40.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -111,6 +113,8 @@ exclude = [
     "dist",
     "build",
     "*.egg-info",
+    "docs/examples",
+    "packages/*/examples",
 ]
 
 [tool.ruff.lint]
@@ -143,6 +147,7 @@ python_files = ["test_*.py", "*_test.py", "benchmark_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 testpaths = ["packages/core/tests", "packages/proxy/tests"]
+pythonpath = ["packages/proxy", "packages/core"]
 asyncio_mode = "auto"
 addopts = [
     "-v",
@@ -150,6 +155,7 @@ addopts = [
     "--strict-config",
     "--tb=short",
     "-ra",
+    "--import-mode=importlib",
 ]
 markers = [
     "unit: Unit tests",

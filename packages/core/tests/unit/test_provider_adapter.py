@@ -1,6 +1,6 @@
 """Tests for ProviderAdapter abstract interface."""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 
@@ -20,47 +20,47 @@ class TestProviderAdapterABC:
 
     def test_incomplete_implementation_cannot_be_instantiated(self) -> None:
         """Test that incomplete implementations cannot be instantiated."""
-        
+
         class IncompleteAdapter(ProviderAdapter):
             """Adapter missing required methods."""
-            
+
             async def execute_request(self, intent: Any, key: Any) -> Any:  # type: ignore[override]
                 """Implement execute_request."""
                 ...
-        
+
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
             IncompleteAdapter()  # type: ignore[abstract]
 
     def test_complete_implementation_can_be_instantiated(self) -> None:
         """Test that complete implementations can be instantiated."""
-        
+
         class CompleteAdapter(ProviderAdapter):
             """Complete adapter implementation for testing."""
-            
+
             async def execute_request(self, intent: Any, key: Any) -> Any:  # type: ignore[override]
                 """Implement execute_request."""
                 ...
-            
+
             def normalize_response(self, provider_response: Any) -> Any:  # type: ignore[override]
                 """Implement normalize_response."""
                 ...
-            
+
             def map_error(self, provider_error: Exception) -> Any:  # type: ignore[override]
                 """Implement map_error."""
                 ...
-            
+
             def get_capabilities(self) -> Any:  # type: ignore[override]
                 """Implement get_capabilities."""
                 ...
-            
+
             async def estimate_cost(self, request_intent: Any) -> Any:  # type: ignore[override]
                 """Implement estimate_cost."""
                 ...
-            
+
             async def get_health(self) -> Any:  # type: ignore[override]
                 """Implement get_health."""
                 ...
-        
+
         # Should not raise
         adapter = CompleteAdapter()
         assert isinstance(adapter, ProviderAdapter)
@@ -70,7 +70,7 @@ class TestProviderAdapterABC:
         """Test that all required methods are abstract and must be implemented."""
         # Check that ProviderAdapter has all abstract methods
         abstract_methods = ProviderAdapter.__abstractmethods__
-        
+
         expected_methods = {
             "execute_request",
             "normalize_response",
@@ -79,7 +79,7 @@ class TestProviderAdapterABC:
             "estimate_cost",
             "get_health",
         }
-        
+
         assert abstract_methods == expected_methods, (
             f"Expected abstract methods {expected_methods}, "
             f"but found {abstract_methods}"
@@ -90,12 +90,12 @@ class TestProviderAdapterABC:
         # Check class docstring
         assert ProviderAdapter.__doc__ is not None
         assert len(ProviderAdapter.__doc__.strip()) > 0
-        
+
         # Check that class docstring contains key information
         docstring = ProviderAdapter.__doc__
         assert "abstract interface" in docstring.lower() or "interface" in docstring.lower()
         assert "provider" in docstring.lower()
-        
+
         # Check method docstrings
         methods = [
             "execute_request",
@@ -105,7 +105,7 @@ class TestProviderAdapterABC:
             "estimate_cost",
             "get_health",
         ]
-        
+
         for method_name in methods:
             method = getattr(ProviderAdapter, method_name)
             assert method.__doc__ is not None, f"{method_name} should have a docstring"
@@ -130,7 +130,7 @@ class TestProviderAdapterProtocol:
             for name in dir(ProviderAdapterProtocol)
             if not name.startswith("_") and callable(getattr(ProviderAdapterProtocol, name, None))
         }
-        
+
         expected_methods = {
             "execute_request",
             "normalize_response",
@@ -139,7 +139,7 @@ class TestProviderAdapterProtocol:
             "estimate_cost",
             "get_health",
         }
-        
+
         # Protocol methods should include all expected methods
         assert expected_methods.issubset(protocol_methods), (
             f"Protocol missing methods. Expected {expected_methods}, "
@@ -165,7 +165,7 @@ class TestProviderAdapterInterface:
             and callable(getattr(ProviderAdapter, name, None))
             and name in ProviderAdapter.__abstractmethods__
         }
-        
+
         # Get methods from Protocol (approximate check)
         protocol_methods = {
             name
@@ -173,7 +173,7 @@ class TestProviderAdapterInterface:
             if not name.startswith("_")
             and callable(getattr(ProviderAdapterProtocol, name, None))
         }
-        
+
         # Both should have the core methods
         core_methods = {
             "execute_request",
@@ -183,7 +183,7 @@ class TestProviderAdapterInterface:
             "estimate_cost",
             "get_health",
         }
-        
+
         assert core_methods.issubset(abc_methods), "ABC missing core methods"
         assert core_methods.issubset(protocol_methods), "Protocol missing core methods"
 
@@ -193,7 +193,7 @@ class TestProviderAdapterInterface:
             ProviderAdapter,
             ProviderAdapterProtocol,
         )
-        
+
         assert ProviderAdapter is not None
         assert ProviderAdapterProtocol is not None
 

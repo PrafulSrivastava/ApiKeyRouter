@@ -12,7 +12,6 @@ import json
 import sys
 from pathlib import Path
 
-
 # Performance targets in milliseconds (p95)
 PERFORMANCE_TARGETS = {
     "test_benchmark_routing_decision_time": 10.0,  # p95 < 10ms

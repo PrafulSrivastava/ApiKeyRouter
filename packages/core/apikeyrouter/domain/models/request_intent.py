@@ -160,7 +160,7 @@ class RequestIntent(BaseModel):
         # Validate parameter ranges
         if "temperature" in v:
             temp = v["temperature"]
-            if isinstance(temp, (int, float)) and (temp < 0.0 or temp > 2.0):
+            if isinstance(temp, int | float) and (temp < 0.0 or temp > 2.0):
                 raise ValueError("Temperature must be between 0.0 and 2.0")
         if "max_tokens" in v:
             max_tokens = v["max_tokens"]
@@ -168,7 +168,7 @@ class RequestIntent(BaseModel):
                 raise ValueError("max_tokens must be a positive integer not exceeding 1000000")
         if "top_p" in v:
             top_p = v["top_p"]
-            if isinstance(top_p, (int, float)) and (top_p < 0.0 or top_p > 1.0):
+            if isinstance(top_p, int | float) and (top_p < 0.0 or top_p > 1.0):
                 raise ValueError("top_p must be between 0.0 and 1.0")
         return v
 

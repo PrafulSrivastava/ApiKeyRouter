@@ -1,7 +1,7 @@
 """Authentication middleware for management API endpoints."""
 
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Header, HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
