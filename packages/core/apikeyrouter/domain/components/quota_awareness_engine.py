@@ -139,7 +139,10 @@ class QuotaAwarenessEngine:
             quota_state.used_requests += consumed
 
             # Update token capacity
-            if quota_state.remaining_tokens is not None and quota_state.remaining_tokens.value is not None:
+            if (
+                quota_state.remaining_tokens is not None
+                and quota_state.remaining_tokens.value is not None
+            ):
                 new_remaining_tokens = max(0, quota_state.remaining_tokens.value - tokens_consumed)
                 quota_state.remaining_tokens.value = new_remaining_tokens
             quota_state.used_tokens += tokens_consumed
@@ -325,9 +328,7 @@ class QuotaAwarenessEngine:
             # <20% or hard limit hit
             return CapacityState.Exhausted
 
-    async def _handle_reset(
-        self, quota_state: QuotaState, current_time: datetime
-    ) -> QuotaState:
+    async def _handle_reset(self, quota_state: QuotaState, current_time: datetime) -> QuotaState:
         """Handle quota reset when time window boundary is reached.
 
         Args:
@@ -378,9 +379,7 @@ class QuotaAwarenessEngine:
             # For Custom, reset_at should be set externally, don't change it
             pass
         else:
-            quota_state.reset_at = quota_state.time_window.calculate_next_reset(
-                current_time
-            )
+            quota_state.reset_at = quota_state.time_window.calculate_next_reset(current_time)
 
         # Update updated_at
         quota_state.updated_at = current_time
@@ -1170,9 +1169,7 @@ class QuotaAwarenessEngine:
             # Unknown uncertainty: assume 50% higher usage (50% shorter time)
             return time_to_exhaustion_hours * 0.5
 
-    async def _get_exhaustion_prediction(
-        self, key_id: str
-    ) -> ExhaustionPrediction | None:
+    async def _get_exhaustion_prediction(self, key_id: str) -> ExhaustionPrediction | None:
         """Get exhaustion prediction with caching.
 
         Retrieves cached prediction if available and not expired, otherwise
@@ -1266,7 +1263,11 @@ class QuotaAwarenessEngine:
             await self._observability.log(
                 level="WARNING",
                 message=f"Failed to save capacity state transition for key {key_id}: {e}",
-                context={"key_id": key_id, "from_state": from_state.value, "to_state": to_state.value},
+                context={
+                    "key_id": key_id,
+                    "from_state": from_state.value,
+                    "to_state": to_state.value,
+                },
             )
 
         # Emit state_transition event
@@ -1292,4 +1293,3 @@ class QuotaAwarenessEngine:
                 message=f"Failed to emit state_transition event: {e}",
                 context={"key_id": key_id},
             )
-

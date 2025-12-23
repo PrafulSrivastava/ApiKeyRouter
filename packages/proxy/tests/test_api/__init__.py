@@ -1,2 +1,1 @@
 """API endpoint tests."""
-

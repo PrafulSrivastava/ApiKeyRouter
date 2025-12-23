@@ -286,4 +286,3 @@ class TestStateStoreInterface:
         for method_name in methods:
             method = getattr(StateStore, method_name)
             assert inspect.iscoroutinefunction(method), f"{method_name} should be async"
-

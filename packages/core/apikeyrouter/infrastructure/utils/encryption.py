@@ -197,7 +197,3 @@ def decrypt_key_material(encrypted_key_material: str) -> str:
         return decrypted.decode()
     except Exception as e:
         raise EncryptionError(f"Failed to decrypt key material: {e}") from e
-
-
-
-

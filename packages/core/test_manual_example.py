@@ -89,7 +89,9 @@ def format_key_consumption(key: APIKey, quota_state: QuotaState | None = None) -
     return ", ".join(parts)
 
 
-async def get_key_consumption_info(router: ApiKeyRouter, key_ids: list[str]) -> dict[str, dict[str, Any]]:
+async def get_key_consumption_info(
+    router: ApiKeyRouter, key_ids: list[str]
+) -> dict[str, dict[str, Any]]:
     """Get consumption information for multiple keys.
 
     Args:
@@ -127,11 +129,13 @@ class MinimalObservabilityManager(ObservabilityManager):
         metadata: dict[str, Any] | None = None,
     ) -> None:
         """Emit event - only log routing decisions and key access."""
-        self.events.append({
-            "event_type": event_type,
-            "payload": payload,
-            "metadata": metadata,
-        })
+        self.events.append(
+            {
+                "event_type": event_type,
+                "payload": payload,
+                "metadata": metadata,
+            }
+        )
         if event_type == "routing_decision":
             key_id = payload.get("selected_key_id", "unknown")
             objective = payload.get("objective", "unknown")
@@ -150,11 +154,13 @@ class MinimalObservabilityManager(ObservabilityManager):
         context: dict[str, Any] | None = None,
     ) -> None:
         """Log message - only log errors and warnings."""
-        self.logs.append({
-            "level": level,
-            "message": message,
-            "context": context,
-        })
+        self.logs.append(
+            {
+                "level": level,
+                "message": message,
+                "context": context,
+            }
+        )
         if level in ("ERROR", "WARNING"):
             print(f"   ⚠️  [{level}] {message}")
 
@@ -383,7 +389,9 @@ async def test_routing_objectives() -> None:
 
     # Test cost-based routing
     print("\n2. Testing cost-based routing...")
-    print("   📋 SCENARIO: Cost optimization should select the key with the lowest cost per request.")
+    print(
+        "   📋 SCENARIO: Cost optimization should select the key with the lowest cost per request."
+    )
     print("   🎯 EXPECTED: Key 1 should be selected (cost=$0.01/1k, lowest among all keys)")
     key_info = await get_key_consumption_info(router, [key1.id, key2.id, key3.id])
     print("   Objective: cost")
@@ -395,15 +403,21 @@ async def test_routing_objectives() -> None:
         request_intent_obj=request_intent,
     )
     selected_info = key_info.get(decision.selected_key_id, {})
-    print(f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})")
+    print(
+        f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})"
+    )
     print("   📊 ANALYSIS: The routing engine selected the key with the lowest cost, prioritizing")
     print("                cost efficiency over other factors like usage distribution.")
     assert decision.selected_key_id in [key1.id, key2.id, key3.id]
 
     # Test reliability-based routing
     print("\n3. Testing reliability-based routing...")
-    print("   📋 SCENARIO: Reliability optimization should select the key with the best success rate.")
-    print("   🎯 EXPECTED: Key with lowest failure_count and highest success rate should be selected.")
+    print(
+        "   📋 SCENARIO: Reliability optimization should select the key with the best success rate."
+    )
+    print(
+        "   🎯 EXPECTED: Key with lowest failure_count and highest success rate should be selected."
+    )
     print("                Reliability considers failure_count, usage_count, and key state.")
     key_info = await get_key_consumption_info(router, [key1.id, key2.id, key3.id])
     print("   Objective: reliability")
@@ -415,7 +429,9 @@ async def test_routing_objectives() -> None:
         request_intent_obj=request_intent,
     )
     selected_info = key_info.get(decision.selected_key_id, {})
-    print(f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})")
+    print(
+        f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})"
+    )
     print("   📊 ANALYSIS: The routing engine prioritized reliability by selecting a key with")
     print("                good success rate and low failure count, ensuring request completion.")
 
@@ -434,7 +450,9 @@ async def test_routing_objectives() -> None:
         request_intent_obj=request_intent,
     )
     selected_info = key_info.get(decision.selected_key_id, {})
-    print(f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})")
+    print(
+        f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})"
+    )
     print("   📊 ANALYSIS: The routing engine selected the least-used key to ensure fair")
     print("                distribution of requests across all available keys, preventing")
     print("                overuse of any single key.")
@@ -490,12 +508,16 @@ async def test_cost_aware_routing() -> None:
     )
     # Set initial spending to $0.50 (simulating that $0.50 has already been used from the budget)
     budget = await cost_controller.update_spending(budget.id, Decimal("0.50"))
-    print(f"   ✓ Budget created: ${budget.limit_amount} limit, ${budget.current_spend} already spent, ${budget.remaining_budget} remaining (hard enforcement)")
+    print(
+        f"   ✓ Budget created: ${budget.limit_amount} limit, ${budget.current_spend} already spent, ${budget.remaining_budget} remaining (hard enforcement)"
+    )
 
     # Test cost estimation
     print("\n3. Testing cost estimation...")
     print("   📋 SCENARIO: Estimate the cost of a request before execution.")
-    print("   🎯 EXPECTED: CostController should estimate cost based on request intent and provider pricing.")
+    print(
+        "   🎯 EXPECTED: CostController should estimate cost based on request intent and provider pricing."
+    )
     request_intent = RequestIntent(
         model="gpt-4",
         messages=[Message(role="user", content="Test message")],
@@ -508,21 +530,29 @@ async def test_cost_aware_routing() -> None:
         key_id=key1.id,
     )
     print(f"   ✓ RESULT: Cost estimate for key1: ${estimate1.amount}")
-    print("   📊 ANALYSIS: The cost estimate includes amount, confidence level, and token estimates.")
+    print(
+        "   📊 ANALYSIS: The cost estimate includes amount, confidence level, and token estimates."
+    )
     print("                This allows proactive cost control before making API calls.")
 
     # Test budget check
     print("\n4. Testing budget check...")
     print("   📋 SCENARIO: Check if a request would exceed budget before execution.")
-    print("   🎯 EXPECTED: Budget check should verify if the estimated cost would exceed the budget limit.")
+    print(
+        "   🎯 EXPECTED: Budget check should verify if the estimated cost would exceed the budget limit."
+    )
     budget_result = await cost_controller.check_budget(
         request_intent=request_intent,
         cost_estimate=estimate1,
         provider_id="openai",
         key_id=key1.id,
     )
-    print(f"   ✓ RESULT: Budget check - allowed={budget_result.allowed}, remaining=${budget_result.remaining_budget}")
-    print("   📊 ANALYSIS: The budget check determines if the request is allowed based on remaining budget.")
+    print(
+        f"   ✓ RESULT: Budget check - allowed={budget_result.allowed}, remaining=${budget_result.remaining_budget}"
+    )
+    print(
+        "   📊 ANALYSIS: The budget check determines if the request is allowed based on remaining budget."
+    )
     print("                With hard enforcement, requests exceeding budget are rejected.")
     print("                With soft enforcement, requests are allowed but warnings are issued.")
 
@@ -535,7 +565,9 @@ async def test_cost_aware_routing() -> None:
     print("                3. Filter out keys that would exceed budget (hard enforcement)")
     print("                4. Select the lowest-cost key among remaining eligible keys")
     key_info = await get_key_consumption_info(router, [key1.id, key2.id, key3.id])
-    print(f"   Objective: cost | Budget: ${budget.limit_amount} limit, ${budget.current_spend} spent (hard enforcement)")
+    print(
+        f"   Objective: cost | Budget: ${budget.limit_amount} limit, ${budget.current_spend} spent (hard enforcement)"
+    )
     for key_id, info in key_info.items():
         print(f"   • Key {key_id[:8]}...: {info['formatted']}")
     decision = await router.routing_engine.route_request(
@@ -544,10 +576,18 @@ async def test_cost_aware_routing() -> None:
         request_intent_obj=request_intent,
     )
     selected_info = key_info.get(decision.selected_key_id, {})
-    print(f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})")
-    print("   📊 ANALYSIS: The routing engine considered both cost optimization and budget constraints.")
-    print("                Keys that would exceed the budget were filtered out, and the lowest-cost")
-    print("                key within budget was selected. The explanation should mention budget filtering.")
+    print(
+        f"   ✓ RESULT: Selected key {decision.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})"
+    )
+    print(
+        "   📊 ANALYSIS: The routing engine considered both cost optimization and budget constraints."
+    )
+    print(
+        "                Keys that would exceed the budget were filtered out, and the lowest-cost"
+    )
+    print(
+        "                key within budget was selected. The explanation should mention budget filtering."
+    )
 
     # Verify budget information is in explanation
     assert "budget" in decision.explanation.lower() or "cost" in decision.explanation.lower()
@@ -570,7 +610,9 @@ async def test_cost_aware_routing() -> None:
     # Set initial spending to $1.80 (close to limit)
     await cost_controller.update_spending(soft_budget.id, Decimal("1.80"))
     key_info = await get_key_consumption_info(router, [key1.id, key2.id, key3.id])
-    print(f"   Objective: cost | Budget: ${soft_budget.limit_amount} limit, $1.80 spent (soft enforcement)")
+    print(
+        f"   Objective: cost | Budget: ${soft_budget.limit_amount} limit, $1.80 spent (soft enforcement)"
+    )
     for key_id, info in key_info.items():
         print(f"   • Key {key_id[:8]}...: {info['formatted']}")
 
@@ -580,7 +622,9 @@ async def test_cost_aware_routing() -> None:
         request_intent_obj=request_intent,
     )
     selected_info = key_info.get(decision2.selected_key_id, {})
-    print(f"   ✓ RESULT: Selected key {decision2.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})")
+    print(
+        f"   ✓ RESULT: Selected key {decision2.selected_key_id[:8]}... ({selected_info.get('formatted', 'N/A')})"
+    )
     print("   📊 ANALYSIS: With soft enforcement, keys that would exceed budget are penalized")
     print("                (score reduced by 30%) but not filtered out. The routing engine still")
     print("                selects the best key considering both cost and budget proximity.")
@@ -623,7 +667,9 @@ async def test_quota_awareness() -> None:
     print("\n3. Getting capacity estimate from quota state...")
     quota_state = await router.quota_awareness_engine.get_quota_state(key.id)
     capacity_estimate = quota_state.remaining_capacity
-    print(f"   ✓ Capacity estimate: {capacity_estimate.value} (confidence: {capacity_estimate.confidence})")
+    print(
+        f"   ✓ Capacity estimate: {capacity_estimate.value} (confidence: {capacity_estimate.confidence})"
+    )
 
     # Test exhaustion prediction
     print("\n4. Predicting exhaustion...")
@@ -776,7 +822,9 @@ async def test_key_material_encryption() -> None:
     # Test encryption service directly
     print("\n1. Testing EncryptionService directly...")
     print("   📋 SCENARIO: Encrypt and decrypt key material using EncryptionService.")
-    print("   🎯 EXPECTED: EncryptionService should encrypt plaintext keys and decrypt them correctly.")
+    print(
+        "   🎯 EXPECTED: EncryptionService should encrypt plaintext keys and decrypt them correctly."
+    )
 
     encryption_service = router.key_manager._encryption_service
     original_key = "sk-test-encryption-key-12345"
@@ -794,7 +842,9 @@ async def test_key_material_encryption() -> None:
     # Test that registered keys are encrypted
     print("\n2. Testing that registered keys are encrypted...")
     print("   📋 SCENARIO: Register a key and verify it's stored encrypted.")
-    print("   🎯 EXPECTED: The key_material field should contain encrypted (base64) data, not plaintext.")
+    print(
+        "   🎯 EXPECTED: The key_material field should contain encrypted (base64) data, not plaintext."
+    )
 
     test_key_material = "sk-registered-key-abc123"
     key = await router.register_key(
@@ -823,9 +873,10 @@ async def test_key_material_encryption() -> None:
         # Check if it might be double base64-encoded (from rotate_key format)
         try:
             from base64 import b64decode
+
             decoded = b64decode(stored_value)
-            decoded_str = decoded.decode('utf-8', errors='ignore')
-            if decoded_str.startswith('gAAAAA'):
+            decoded_str = decoded.decode("utf-8", errors="ignore")
+            if decoded_str.startswith("gAAAAA"):
                 print("   [INFO] Key appears to be double base64-encoded")
                 print(f"   [INFO] Decoded value starts with: {decoded_str[:30]}...")
                 # This is the rotate_key format - update our check
@@ -844,7 +895,9 @@ async def test_key_material_encryption() -> None:
     print(f"   ✓ Key stored encrypted: {stored_value[:30]}...")
     print(f"   ✓ Original key material NOT in stored value: {is_not_plaintext}")
     print("   📊 ANALYSIS: Keys are automatically encrypted during registration.")
-    print("                The stored key_material is base64-encoded encrypted data, not plaintext.")
+    print(
+        "                The stored key_material is base64-encoded encrypted data, not plaintext."
+    )
 
     # Test on-demand decryption
     print("\n3. Testing on-demand decryption...")
@@ -884,7 +937,9 @@ async def test_secure_key_storage() -> None:
     print("TEST 9: Secure Key Storage (Story 3.3.2)")
     print("=" * 70)
     print("\n📝 SCENARIO:")
-    print("   This test verifies that keys are never exposed in logs, error messages, or API responses.")
+    print(
+        "   This test verifies that keys are never exposed in logs, error messages, or API responses."
+    )
     print("   It also tests the audit trail for key access events.")
 
     minimal_obs = MinimalObservabilityManager()
@@ -945,13 +1000,17 @@ async def test_secure_key_storage() -> None:
     assert safe_dict["provider_id"] == key.provider_id
     print(f"   ✓ Safe dict excludes key_material: {'key_material' not in safe_dict}")
     print(f"   ✓ Safe dict includes other fields: {safe_dict['id'] == key.id}")
-    print("   📊 ANALYSIS: to_safe_dict() provides a safe representation for logging/API responses.")
+    print(
+        "   📊 ANALYSIS: to_safe_dict() provides a safe representation for logging/API responses."
+    )
     print("                This prevents accidental key material exposure.")
 
     # Test audit trail captures key access
     print("\n4. Testing audit trail for key access...")
     print("   📋 SCENARIO: Access key material and verify audit trail captures the event.")
-    print("   🎯 EXPECTED: Audit trail should log key_id, operation, and result, but not key_material.")
+    print(
+        "   🎯 EXPECTED: Audit trail should log key_id, operation, and result, but not key_material."
+    )
 
     # Clear previous events
     minimal_obs.events.clear()
@@ -996,7 +1055,9 @@ async def test_input_validation() -> None:
     # Test key material validation
     print("\n1. Testing key material validation...")
     print("   📋 SCENARIO: Attempt to register keys with invalid formats or malicious content.")
-    print("   🎯 EXPECTED: Validation should reject invalid key material with clear error messages.")
+    print(
+        "   🎯 EXPECTED: Validation should reject invalid key material with clear error messages."
+    )
 
     # Test empty key
     try:
@@ -1026,7 +1087,9 @@ async def test_input_validation() -> None:
     except ValidationError:
         raise AssertionError("Valid key should not be rejected") from None
 
-    print("   📊 ANALYSIS: Key material validation prevents injection attacks and enforces format rules.")
+    print(
+        "   📊 ANALYSIS: Key material validation prevents injection attacks and enforces format rules."
+    )
 
     # Test provider ID validation
     print("\n2. Testing provider ID validation...")
@@ -1116,7 +1179,9 @@ async def test_input_validation() -> None:
     except Exception as e:
         # Pydantic ValidationError is raised during model creation
         error_msg = str(e)
-        print(f"   ✓ Empty model rejected: {error_msg.split('[')[0] if '[' in error_msg else error_msg}")
+        print(
+            f"   ✓ Empty model rejected: {error_msg.split('[')[0] if '[' in error_msg else error_msg}"
+        )
 
     # Test injection in model name (Pydantic validates at creation time)
     try:
@@ -1129,7 +1194,9 @@ async def test_input_validation() -> None:
     except Exception as e:
         # Pydantic ValidationError is raised during model creation
         error_msg = str(e)
-        print(f"   ✓ Injection in model name rejected: {error_msg.split('[')[0] if '[' in error_msg else error_msg}")
+        print(
+            f"   ✓ Injection in model name rejected: {error_msg.split('[')[0] if '[' in error_msg else error_msg}"
+        )
 
     # Test empty messages (Pydantic validates at creation time)
     try:
@@ -1142,7 +1209,9 @@ async def test_input_validation() -> None:
     except Exception as e:
         # Pydantic ValidationError is raised during model creation
         error_msg = str(e)
-        print(f"   ✓ Empty messages rejected: {error_msg.split('[')[0] if '[' in error_msg else error_msg}")
+        print(
+            f"   ✓ Empty messages rejected: {error_msg.split('[')[0] if '[' in error_msg else error_msg}"
+        )
 
     # Test valid request intent
     try:
@@ -1172,7 +1241,9 @@ async def test_input_validation() -> None:
     except Exception as e:
         # KeyRegistrationError wraps ValidationError
         error_msg = str(e)
-        print(f"   ✓ Invalid key material rejected by router: {error_msg.split(':')[-1].strip() if ':' in error_msg else error_msg}")
+        print(
+            f"   ✓ Invalid key material rejected by router: {error_msg.split(':')[-1].strip() if ':' in error_msg else error_msg}"
+        )
 
     # Test invalid provider ID
     try:
@@ -1184,7 +1255,9 @@ async def test_input_validation() -> None:
     except Exception as e:
         # KeyRegistrationError wraps ValidationError
         error_msg = str(e)
-        print(f"   ✓ Invalid provider ID rejected by router: {error_msg.split(':')[-1].strip() if ':' in error_msg else type(e).__name__}")
+        print(
+            f"   ✓ Invalid provider ID rejected by router: {error_msg.split(':')[-1].strip() if ':' in error_msg else type(e).__name__}"
+        )
 
     # Test invalid metadata
     try:
@@ -1197,7 +1270,9 @@ async def test_input_validation() -> None:
     except Exception as e:
         # KeyRegistrationError wraps ValidationError
         error_msg = str(e)
-        print(f"   ✓ Invalid metadata rejected by router: {error_msg.split(':')[-1].strip() if ':' in error_msg else type(e).__name__}")
+        print(
+            f"   ✓ Invalid metadata rejected by router: {error_msg.split(':')[-1].strip() if ':' in error_msg else type(e).__name__}"
+        )
 
     print("   📊 ANALYSIS: Validation is integrated at the API boundary.")
     print("                All inputs are validated before processing, preventing malicious data.")

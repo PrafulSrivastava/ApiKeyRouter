@@ -59,9 +59,7 @@ class Message(BaseModel):
         """Validate message role."""
         valid_roles = {"system", "user", "assistant", "tool"}
         if v.lower() not in valid_roles:
-            raise ValueError(
-                f"Role must be one of {valid_roles}, got {v!r}"
-            )
+            raise ValueError(f"Role must be one of {valid_roles}, got {v!r}")
         return v.lower()
 
     @field_validator("content", mode="before")
@@ -203,4 +201,3 @@ class RequestIntent(BaseModel):
             Stream value (defaults to False if not set).
         """
         return self.parameters.get("stream", False)
-

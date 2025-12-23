@@ -106,13 +106,11 @@ class TimeWindow(str, Enum):
         from datetime import timedelta
 
         if self == TimeWindow.Hourly:
-            return current_time.replace(minute=0, second=0, microsecond=0) + timedelta(
-                hours=1
-            )
+            return current_time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
         elif self == TimeWindow.Daily:
-            return current_time.replace(
-                hour=0, minute=0, second=0, microsecond=0
-            ) + timedelta(days=1)
+            return current_time.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
+                days=1
+            )
         elif self == TimeWindow.Monthly:
             # Calculate first day of next month
             if current_time.month == 12:
@@ -181,7 +179,6 @@ class CapacityEstimate(BaseModel):
         str_strip_whitespace=True,
     )
 
-
     def get_estimate_type(self) -> Literal["exact", "estimated", "bounded", "unknown"]:
         """Determine the type of estimate based on available fields.
 
@@ -212,9 +209,7 @@ class CapacityEstimate(BaseModel):
             )
         elif estimate_type == "bounded":
             bound = (
-                f"min={self.min_value}"
-                if self.min_value is not None
-                else f"max={self.max_value}"
+                f"min={self.min_value}" if self.min_value is not None else f"max={self.max_value}"
             )
             return f"CapacityEstimate({bound}, confidence={self.confidence})"
         else:
@@ -310,7 +305,6 @@ class QuotaState(BaseModel):
             raise ValueError("ID must be 255 characters or less")
         return v.strip()
 
-
     def __repr__(self) -> str:
         """String representation of quota state."""
         return (
@@ -370,9 +364,7 @@ class UsageRate(BaseModel):
 
     def __repr__(self) -> str:
         """String representation of usage rate."""
-        tokens_str = (
-            f"{self.tokens_per_hour:.2f}" if self.tokens_per_hour is not None else "None"
-        )
+        tokens_str = f"{self.tokens_per_hour:.2f}" if self.tokens_per_hour is not None else "None"
         return (
             f"UsageRate(requests_per_hour={self.requests_per_hour:.2f}, "
             f"tokens_per_hour={tokens_str}, window_hours={self.window_hours:.2f}, "

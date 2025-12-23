@@ -5,4 +5,3 @@ from apikeyrouter.router import ApiKeyRouter
 __version__ = "0.1.0"
 
 __all__ = ["ApiKeyRouter"]
-

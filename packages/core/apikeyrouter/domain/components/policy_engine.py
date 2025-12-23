@@ -51,9 +51,7 @@ class PolicyEngine:
         # For integration purposes, we'll support policies passed directly
         return []
 
-    async def evaluate_policy(
-        self, policy: Policy, context: dict[str, Any]
-    ) -> PolicyResult:
+    async def evaluate_policy(self, policy: Policy, context: dict[str, Any]) -> PolicyResult:
         """Evaluate policy against routing context.
 
         Args:
@@ -90,9 +88,7 @@ class PolicyEngine:
             reason=f"Policy {policy.id} type {policy.type.value} not yet fully implemented",
         )
 
-    def _evaluate_routing_policy(
-        self, policy: Policy, context: dict[str, Any]
-    ) -> PolicyResult:
+    def _evaluate_routing_policy(self, policy: Policy, context: dict[str, Any]) -> PolicyResult:
         """Evaluate routing policy rules.
 
         Args:
@@ -129,9 +125,7 @@ class PolicyEngine:
                     success_rate = key.usage_count / total
                     if success_rate < min_reliability:
                         filtered_keys.append(key.id)
-                        reasons.append(
-                            f"Key {key.id} below min_reliability {min_reliability:.2%}"
-                        )
+                        reasons.append(f"Key {key.id} below min_reliability {min_reliability:.2%}")
 
         # Check allowed_providers constraint
         if "allowed_providers" in rules:
@@ -151,9 +145,7 @@ class PolicyEngine:
                 for key in eligible_keys:
                     if key.provider_id in blocked_providers:
                         filtered_keys.append(key.id)
-                        reasons.append(
-                            f"Key {key.id} provider {key.provider_id} is blocked"
-                        )
+                        reasons.append(f"Key {key.id} provider {key.provider_id} is blocked")
 
         reason = "; ".join(reasons) if reasons else f"Policy {policy.id} applied"
         return PolicyResult(
@@ -229,9 +221,7 @@ class PolicyEngine:
                     for key in eligible_keys:
                         if key.state.value not in allowed_states:
                             filtered_keys.append(key.id)
-                            reasons.append(
-                                f"Key {key.id} state {key.state.value} not allowed"
-                            )
+                            reasons.append(f"Key {key.id} state {key.state.value} not allowed")
 
                 # Filter by key IDs
                 if "blocked_keys" in key_filters:
@@ -249,9 +239,7 @@ class PolicyEngine:
             applied_policies=[policy.id],
         )
 
-    async def resolve_policy_conflicts(
-        self, policies: list[Policy]
-    ) -> list[Policy]:
+    async def resolve_policy_conflicts(self, policies: list[Policy]) -> list[Policy]:
         """Resolve policy conflicts using precedence rules.
 
         Args:
@@ -263,6 +251,3 @@ class PolicyEngine:
         # Sort by priority (higher priority first)
         sorted_policies = sorted(policies, key=lambda p: p.priority, reverse=True)
         return sorted_policies
-
-
-

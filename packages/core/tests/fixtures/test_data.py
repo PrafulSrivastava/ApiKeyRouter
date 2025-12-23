@@ -255,9 +255,7 @@ def mock_provider_adapter() -> MagicMock:
         )
     )
     adapter.estimate_cost = MagicMock(return_value=0.001)
-    adapter.get_health_state = AsyncMock(
-        return_value={"status": "healthy", "latency_ms": 100}
-    )
+    adapter.get_health_state = AsyncMock(return_value={"status": "healthy", "latency_ms": 100})
     adapter.get_capabilities = MagicMock(
         return_value={
             "models": ["gpt-4", "gpt-3.5-turbo"],
@@ -295,9 +293,7 @@ def mock_provider_adapter_anthropic() -> MagicMock:
         )
     )
     adapter.estimate_cost = MagicMock(return_value=0.0015)
-    adapter.get_health_state = AsyncMock(
-        return_value={"status": "healthy", "latency_ms": 120}
-    )
+    adapter.get_health_state = AsyncMock(return_value={"status": "healthy", "latency_ms": 120})
     adapter.get_capabilities = MagicMock(
         return_value={
             "models": ["claude-3-opus", "claude-3-sonnet"],
@@ -327,9 +323,7 @@ def mock_provider_adapter_with_error() -> MagicMock:
         )
     )
     adapter.estimate_cost = MagicMock(return_value=0.001)
-    adapter.get_health_state = AsyncMock(
-        return_value={"status": "unhealthy", "latency_ms": 5000}
-    )
+    adapter.get_health_state = AsyncMock(return_value={"status": "unhealthy", "latency_ms": 5000})
     adapter.get_capabilities = MagicMock(
         return_value={
             "models": ["gpt-4"],
@@ -337,4 +331,3 @@ def mock_provider_adapter_with_error() -> MagicMock:
         }
     )
     return adapter
-

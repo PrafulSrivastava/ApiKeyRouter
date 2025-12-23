@@ -64,5 +64,3 @@ class BudgetCheckResult(BaseModel):
             f"would_exceed={self.would_exceed}, "
             f"violated_budgets={len(self.violated_budgets)})"
         )
-
-

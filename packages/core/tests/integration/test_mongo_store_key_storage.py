@@ -20,7 +20,9 @@ async def mongodb_database():
         client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
         await client.admin.command("ping")
     except Exception:
-        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+        pytest.skip(
+            "MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL"
+        )
 
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_keys"]
@@ -265,4 +267,3 @@ async def test_get_key_uses_index_for_fast_lookup(mongo_store: MongoStateStore):
     assert retrieved.id == "perf-test-key-50"
     # Should be fast with index (less than 100ms typically)
     assert elapsed < 1.0  # Allow some margin for test environment
-

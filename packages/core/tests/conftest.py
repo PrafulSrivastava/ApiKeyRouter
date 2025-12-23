@@ -46,4 +46,3 @@ with suppress(ImportError):
     from .fixtures import test_data  # noqa: F401, E402
     # Fixtures may not be available if optional dependencies (motor, etc.) are missing
     # This is fine - tests that need fixtures can import them directly
-

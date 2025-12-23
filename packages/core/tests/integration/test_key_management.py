@@ -125,9 +125,7 @@ class TestKeyRegistrationAndStateManagement:
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Verify initial state
         assert key.state == KeyState.Available
@@ -163,9 +161,7 @@ class TestKeyRegistrationAndStateManagement:
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Disable key (revocation equivalent)
         await api_key_router.key_manager.update_key_state(
@@ -180,9 +176,7 @@ class TestKeyRegistrationAndStateManagement:
         assert disabled_key.state == KeyState.Disabled
 
         # Verify revoked key is not eligible
-        eligible_keys = await api_key_router.key_manager.get_eligible_keys(
-            provider_id="openai"
-        )
+        eligible_keys = await api_key_router.key_manager.get_eligible_keys(provider_id="openai")
         assert key.id not in [k.id for k in eligible_keys]
 
     @pytest.mark.asyncio
@@ -192,9 +186,7 @@ class TestKeyRegistrationAndStateManagement:
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
-        old_key = await api_key_router.register_key(
-            key_material="sk-old-key", provider_id="openai"
-        )
+        old_key = await api_key_router.register_key(key_material="sk-old-key", provider_id="openai")
 
         # Register new key (rotation)
         new_key = await api_key_router.register_key(
@@ -221,9 +213,7 @@ class TestKeyRegistrationAndStateManagement:
         assert new_key_retrieved.state == KeyState.Available
 
         # Verify only new key is eligible
-        eligible_keys = await api_key_router.key_manager.get_eligible_keys(
-            provider_id="openai"
-        )
+        eligible_keys = await api_key_router.key_manager.get_eligible_keys(provider_id="openai")
         eligible_key_ids = [k.id for k in eligible_keys]
         assert new_key.id in eligible_key_ids
         assert old_key.id not in eligible_key_ids
@@ -253,9 +243,7 @@ class TestKeyRegistrationAndStateManagement:
             assert key.state == KeyState.Available
 
         # Verify all keys are eligible
-        eligible_keys = await api_key_router.key_manager.get_eligible_keys(
-            provider_id="openai"
-        )
+        eligible_keys = await api_key_router.key_manager.get_eligible_keys(provider_id="openai")
         eligible_key_ids = [k.id for k in eligible_keys]
         for key in keys:
             assert key.id in eligible_key_ids
@@ -267,9 +255,7 @@ class TestKeyRegistrationAndStateManagement:
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Get initial statistics
         initial_key = await api_key_router.key_manager.get_key(key.id)
@@ -298,9 +284,7 @@ class TestKeyRegistrationAndStateManagement:
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Set key to Throttled with cooldown (5 minutes = 300 seconds)
         await api_key_router.key_manager.update_key_state(
@@ -317,8 +301,5 @@ class TestKeyRegistrationAndStateManagement:
         assert throttled_key.cooldown_until is not None
 
         # Verify key is not eligible during cooldown
-        eligible_keys = await api_key_router.key_manager.get_eligible_keys(
-            provider_id="openai"
-        )
+        eligible_keys = await api_key_router.key_manager.get_eligible_keys(provider_id="openai")
         assert key.id not in [k.id for k in eligible_keys]
-

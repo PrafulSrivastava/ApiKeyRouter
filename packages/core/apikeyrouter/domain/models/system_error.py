@@ -91,4 +91,3 @@ class SystemError(Exception):
     def __str__(self) -> str:
         """Human-readable error message."""
         return self.message
-

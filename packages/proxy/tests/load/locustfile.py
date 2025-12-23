@@ -33,9 +33,7 @@ class ChatCompletionsTasks(TaskSet):
         """Basic chat completion request."""
         payload = {
             "model": "gpt-4",
-            "messages": [
-                {"role": "user", "content": "Hello, how are you?"}
-            ],
+            "messages": [{"role": "user", "content": "Hello, how are you?"}],
             "temperature": 0.7,
             "max_tokens": 100,
         }
@@ -86,9 +84,7 @@ class ChatCompletionsTasks(TaskSet):
         """Chat completion with streaming (if supported)."""
         payload = {
             "model": "gpt-4",
-            "messages": [
-                {"role": "user", "content": "Write a short story."}
-            ],
+            "messages": [{"role": "user", "content": "Write a short story."}],
             "stream": True,
             "temperature": 0.9,
             "max_tokens": 500,
@@ -112,9 +108,7 @@ class ChatCompletionsTasks(TaskSet):
         models = ["gpt-4", "gpt-3.5-turbo", "gpt-4-turbo"]
         payload = {
             "model": random.choice(models),
-            "messages": [
-                {"role": "user", "content": f"Test message for {random.choice(models)}"}
-            ],
+            "messages": [{"role": "user", "content": f"Test message for {random.choice(models)}"}],
             "temperature": 0.7,
             "max_tokens": 50,
         }
@@ -194,9 +188,7 @@ class HighLoadUser(HttpUser):
         """Rapid fire requests for stress testing."""
         payload = {
             "model": "gpt-4",
-            "messages": [
-                {"role": "user", "content": "Quick test"}
-            ],
+            "messages": [{"role": "user", "content": "Quick test"}],
             "max_tokens": 50,
         }
         with self.client.post(
@@ -251,9 +243,7 @@ class FailureScenarioUser(HttpUser):
         """Request with invalid model name."""
         payload = {
             "model": "invalid-model-name-12345",
-            "messages": [
-                {"role": "user", "content": "Test"}
-            ],
+            "messages": [{"role": "user", "content": "Test"}],
         }
         with self.client.post(
             "/v1/chat/completions",
@@ -275,9 +265,7 @@ class FailureScenarioUser(HttpUser):
         large_content = "A" * 10000  # 10KB of text
         payload = {
             "model": "gpt-4",
-            "messages": [
-                {"role": "user", "content": large_content}
-            ],
+            "messages": [{"role": "user", "content": large_content}],
             "max_tokens": 100,
         }
         with self.client.post(
@@ -311,9 +299,7 @@ class ConcurrentKeySwitchingUser(HttpUser):
         models = ["gpt-4", "gpt-3.5-turbo"]
         payload = {
             "model": random.choice(models),
-            "messages": [
-                {"role": "user", "content": f"Request {random.randint(1, 1000)}"}
-            ],
+            "messages": [{"role": "user", "content": f"Request {random.randint(1, 1000)}"}],
             "temperature": random.uniform(0.1, 1.0),
             "max_tokens": random.randint(50, 200),
         }
@@ -345,4 +331,3 @@ def on_request_failure(request_type, name, response_time, exception):
     """Called when a request fails."""
     # Can be used for custom logging or metrics
     pass
-

@@ -426,4 +426,3 @@ class StateStoreError(Exception):
     """
 
     pass
-

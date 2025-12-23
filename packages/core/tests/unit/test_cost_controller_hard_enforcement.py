@@ -474,5 +474,3 @@ class TestCostControllerHardEnforcement:
         assert error.cost_estimate == Decimal("30.00")
         assert error.budget_limit == Decimal("100.00")
         assert error.message is not None
-
-

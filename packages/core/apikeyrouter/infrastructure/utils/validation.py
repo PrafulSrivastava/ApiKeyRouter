@@ -30,7 +30,10 @@ class ValidationError(Exception):
 # Injection attack patterns to detect
 INJECTION_PATTERNS = [
     # SQL injection patterns
-    re.compile(r"(?i)(union\s+select|select\s+.*\s+from|insert\s+into|delete\s+from|drop\s+table|'\s*or\s*'1'\s*=\s*'1)", re.IGNORECASE),
+    re.compile(
+        r"(?i)(union\s+select|select\s+.*\s+from|insert\s+into|delete\s+from|drop\s+table|'\s*or\s*'1'\s*=\s*'1)",
+        re.IGNORECASE,
+    ),
     # NoSQL injection patterns
     re.compile(r"(?i)(\$where|\$ne|\$gt|\$lt|\$regex|\$exists)", re.IGNORECASE),
     # Command injection patterns
@@ -88,10 +91,10 @@ def validate_key_material(key_material: str) -> None:
     if not key_material.startswith(valid_prefixes) and detect_injection_attempt(key_material):
         # Allow keys without known prefixes (for flexibility)
         # But check for suspicious patterns
-            raise ValidationError(
-                "Key material contains suspicious patterns",
-                field="key_material",
-            )
+        raise ValidationError(
+            "Key material contains suspicious patterns",
+            field="key_material",
+        )
 
     # Check for injection attempts
     if detect_injection_attempt(key_material):
@@ -404,7 +407,9 @@ def validate_request_intent(intent: RequestIntent) -> None:
                         "Temperature must be between 0.0 and 2.0",
                         field=param_field,
                     )
-                if key == "max_tokens" and (not isinstance(value, int) or value < 1 or value > 1000000):
+                if key == "max_tokens" and (
+                    not isinstance(value, int) or value < 1 or value > 1000000
+                ):
                     raise ValidationError(
                         "max_tokens must be a positive integer not exceeding 1000000",
                         field=param_field,
@@ -414,4 +419,3 @@ def validate_request_intent(intent: RequestIntent) -> None:
                         "top_p must be between 0.0 and 1.0",
                         field=param_field,
                     )
-

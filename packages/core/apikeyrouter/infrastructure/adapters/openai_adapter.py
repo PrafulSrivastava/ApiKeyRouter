@@ -213,7 +213,18 @@ class OpenAIAdapter(ProviderAdapter):
             {
                 "role": msg.role,
                 "content": msg.content,
-                **({k: v for k, v in {"name": msg.name, "function_call": msg.function_call, "tool_calls": msg.tool_calls, "tool_call_id": msg.tool_call_id}.items() if v is not None}),
+                **(
+                    {
+                        k: v
+                        for k, v in {
+                            "name": msg.name,
+                            "function_call": msg.function_call,
+                            "tool_calls": msg.tool_calls,
+                            "tool_call_id": msg.tool_call_id,
+                        }.items()
+                        if v is not None
+                    }
+                ),
             }
             for msg in intent.messages
         ]
@@ -687,4 +698,3 @@ class OpenAIAdapter(ProviderAdapter):
         self._health_cache[cache_key] = (health_state, current_time)
 
         return health_state
-

@@ -32,7 +32,9 @@ async def mongodb_database():
         client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
         await client.admin.command("ping")
     except Exception:
-        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+        pytest.skip(
+            "MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL"
+        )
 
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_query"]
@@ -427,4 +429,3 @@ async def test_query_state_state_transition_by_state(mongo_store: MongoStateStor
     for result in results:
         if isinstance(result, StateTransition):
             assert result.to_state == "throttled"
-

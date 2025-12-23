@@ -287,7 +287,10 @@ class TestCORS:
         )
         assert response.status_code == 200
         # Should not have CORS headers for disallowed origin
-        assert "Access-Control-Allow-Origin" not in response.headers or response.headers["Access-Control-Allow-Origin"] != "https://malicious.com"
+        assert (
+            "Access-Control-Allow-Origin" not in response.headers
+            or response.headers["Access-Control-Allow-Origin"] != "https://malicious.com"
+        )
 
 
 class TestSecurityHeaders:
@@ -326,7 +329,10 @@ class TestSecurityHeaders:
         response = client.get("/test")
         assert response.status_code == 200
         # HSTS header should not be present for HTTP requests
-        assert "Strict-Transport-Security" not in response.headers or response.headers.get("Strict-Transport-Security") is None
+        assert (
+            "Strict-Transport-Security" not in response.headers
+            or response.headers.get("Strict-Transport-Security") is None
+        )
 
 
 class TestAuthorizationRules:
@@ -408,4 +414,3 @@ class TestAuthorizationRules:
                 response = client.delete(path, headers={"X-API-Key": self.test_api_key})
 
             assert response.status_code == 200, f"{method} {path} should work with valid API key"
-

@@ -51,4 +51,3 @@ async def run_migrations(database: AsyncIOMotorDatabase) -> None:
     #         {"$set": {"version": 2}},
     #         upsert=True,
     #     )
-

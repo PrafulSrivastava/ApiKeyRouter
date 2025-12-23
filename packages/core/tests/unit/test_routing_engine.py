@@ -85,11 +85,13 @@ class MockObservabilityManager(ObservabilityManager):
         metadata: dict | None = None,
     ) -> None:
         """Emit event to mock store."""
-        self.events.append({
-            "event_type": event_type,
-            "payload": payload,
-            "metadata": metadata or {},
-        })
+        self.events.append(
+            {
+                "event_type": event_type,
+                "payload": payload,
+                "metadata": metadata or {},
+            }
+        )
 
     async def log(
         self,
@@ -98,11 +100,13 @@ class MockObservabilityManager(ObservabilityManager):
         context: dict | None = None,
     ) -> None:
         """Log to mock store."""
-        self.logs.append({
-            "level": level,
-            "message": message,
-            "context": context or {},
-        })
+        self.logs.append(
+            {
+                "level": level,
+                "message": message,
+                "context": context or {},
+            }
+        )
 
 
 @pytest.fixture
@@ -162,6 +166,7 @@ def routing_engine_with_quota(
 ):
     """Create routing engine with quota awareness."""
     from apikeyrouter.domain.components.routing_engine import RoutingEngine
+
     return RoutingEngine(
         key_manager=mock_key_manager,
         state_store=mock_state_store,
@@ -180,9 +185,7 @@ def mock_key_manager(mock_state_store, mock_observability) -> KeyManager:
 
 
 @pytest.fixture
-def routing_engine(
-    mock_key_manager, mock_state_store, mock_observability
-) -> RoutingEngine:
+def routing_engine(mock_key_manager, mock_state_store, mock_observability) -> RoutingEngine:
     """Create routing engine with mocks."""
     return RoutingEngine(
         key_manager=mock_key_manager,
@@ -304,9 +307,7 @@ class TestRoutingEngine:
         assert decision.selected_key_id in decision.explanation
 
     @pytest.mark.asyncio
-    async def test_route_request_performance_under_10ms(
-        self, routing_engine, sample_keys
-    ) -> None:
+    async def test_route_request_performance_under_10ms(self, routing_engine, sample_keys) -> None:
         """Test that routing decision time is under 10ms."""
         request_intent = {"provider_id": "openai", "request_id": "req_perf"}
 
@@ -345,16 +346,12 @@ class TestRoutingEngine:
         assert len(decision.request_id) > 0
 
     @pytest.mark.asyncio
-    async def test_route_request_uses_custom_objective(
-        self, routing_engine, sample_keys
-    ) -> None:
+    async def test_route_request_uses_custom_objective(self, routing_engine, sample_keys) -> None:
         """Test that custom RoutingObjective is used when provided."""
         request_intent = {"provider_id": "openai", "request_id": "req_obj"}
         custom_objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-        decision = await routing_engine.route_request(
-            request_intent, objective=custom_objective
-        )
+        decision = await routing_engine.route_request(request_intent, objective=custom_objective)
 
         assert decision.objective.primary == ObjectiveType.Cost.value
 
@@ -409,9 +406,7 @@ class TestRoutingEngine:
         assert decision4.selected_key_id == anthropic_keys[1].id
 
     @pytest.mark.asyncio
-    async def test_route_request_validates_provider_id(
-        self, routing_engine
-    ) -> None:
+    async def test_route_request_validates_provider_id(self, routing_engine) -> None:
         """Test that routing validates provider_id is present."""
         # Missing provider_id
         with pytest.raises(ValueError, match="request_intent must contain 'provider_id'"):
@@ -434,9 +429,7 @@ class TestRoutingEngine:
 
         # Find routing_decision event
         routing_events = [
-            e
-            for e in mock_observability.events
-            if e["event_type"] == "routing_decision"
+            e for e in mock_observability.events if e["event_type"] == "routing_decision"
         ]
         assert len(routing_events) == 1
 
@@ -461,9 +454,7 @@ class TestRoutingEngine:
 
         # Find routing decision log
         routing_logs = [
-            log
-            for log in mock_observability.logs
-            if "Routing decision made" in log["message"]
+            log for log in mock_observability.logs if "Routing decision made" in log["message"]
         ]
         assert len(routing_logs) > 0
 
@@ -484,9 +475,7 @@ class TestRoutingEngine:
 
         # Check that failure event was emitted
         failure_events = [
-            e
-            for e in mock_observability.events
-            if e["event_type"] == "routing_failed"
+            e for e in mock_observability.events if e["event_type"] == "routing_failed"
         ]
         assert len(failure_events) == 1
 
@@ -499,9 +488,7 @@ class TestObjectiveBasedRouting:
     """Tests for objective-based routing."""
 
     @pytest.mark.asyncio
-    async def test_evaluate_keys_cost_based_scoring(
-        self, routing_engine, mock_key_manager
-    ) -> None:
+    async def test_evaluate_keys_cost_based_scoring(self, routing_engine, mock_key_manager) -> None:
         """Test cost-based scoring (lower cost = higher score)."""
         # Create keys with different costs in metadata
         key1 = await mock_key_manager.register_key(
@@ -563,9 +550,15 @@ class TestObjectiveBasedRouting:
         scores = await routing_engine.evaluate_keys(eligible_keys, objective)
 
         # Higher success rate should have higher score
-        assert scores[key3.id] > scores[key1.id], f"key3 (90%) should score higher than key1 (80%), got {scores[key3.id]} vs {scores[key1.id]}"
-        assert scores[key1.id] > scores[key2.id], f"key1 (80%) should score higher than key2 (50%), got {scores[key1.id]} vs {scores[key2.id]}"
-        assert all(0.0 <= score <= 1.1 for score in scores.values())  # Can exceed 1.0 with state bonus
+        assert (
+            scores[key3.id] > scores[key1.id]
+        ), f"key3 (90%) should score higher than key1 (80%), got {scores[key3.id]} vs {scores[key1.id]}"
+        assert (
+            scores[key1.id] > scores[key2.id]
+        ), f"key1 (80%) should score higher than key2 (50%), got {scores[key1.id]} vs {scores[key2.id]}"
+        assert all(
+            0.0 <= score <= 1.1 for score in scores.values()
+        )  # Can exceed 1.0 with state bonus
 
     @pytest.mark.asyncio
     async def test_evaluate_keys_fairness_based_scoring(
@@ -790,7 +783,9 @@ class TestObjectiveBasedRouting:
 
         # Available key should score higher than Throttled (state bonus: 0.1 vs 0.05)
         # key1: 0.8 + 0.1 = 0.9, key2: 0.8 + 0.05 = 0.85
-        assert scores[key1.id] > scores[key2.id], f"Available key should score higher than Throttled, got {scores[key1.id]} vs {scores[key2.id]}"
+        assert (
+            scores[key1.id] > scores[key2.id]
+        ), f"Available key should score higher than Throttled, got {scores[key1.id]} vs {scores[key2.id]}"
 
     @pytest.mark.asyncio
     async def test_evaluate_keys_fairness_equal_usage_returns_equal_scores(
@@ -1013,7 +1008,10 @@ class TestQuotaAwareRouting:
         # Should select key1 (abundant gets 20% boost, constrained gets 15% penalty)
         assert decision.selected_key_id == key1.id
         # Verify scores show the boost
-        assert decision.evaluation_results[key1.id]["score"] > decision.evaluation_results[key2.id]["score"]
+        assert (
+            decision.evaluation_results[key1.id]["score"]
+            > decision.evaluation_results[key2.id]["score"]
+        )
 
     @pytest.mark.asyncio
     async def test_route_request_penalizes_constrained_keys(
@@ -1069,7 +1067,10 @@ class TestQuotaAwareRouting:
         decision = await routing_engine_with_quota.route_request(request_intent, objective)
 
         # Verify constrained key has lower score
-        assert decision.evaluation_results[key2.id]["score"] < decision.evaluation_results[key1.id]["score"]
+        assert (
+            decision.evaluation_results[key2.id]["score"]
+            < decision.evaluation_results[key1.id]["score"]
+        )
         assert decision.evaluation_results[key2.id]["quota_state"] == "constrained"
 
     @pytest.mark.asyncio
@@ -1163,8 +1164,12 @@ class TestQuotaAwareRouting:
         decision = await routing_engine_with_quota.route_request(request_intent, objective)
 
         # Explanation should mention filtered keys
-        assert "excluded" in decision.explanation.lower() or "filtered" in decision.explanation.lower()
-        assert "exhausted" in decision.explanation.lower() or "quota" in decision.explanation.lower()
+        assert (
+            "excluded" in decision.explanation.lower() or "filtered" in decision.explanation.lower()
+        )
+        assert (
+            "exhausted" in decision.explanation.lower() or "quota" in decision.explanation.lower()
+        )
 
     @pytest.mark.asyncio
     async def test_route_request_handles_all_keys_exhausted(
@@ -1240,9 +1245,7 @@ class TestRoutingDecisionExplanation:
         assert "ROUTING DECISION EXPLANATION" in explanation
 
     @pytest.mark.asyncio
-    async def test_explain_decision_includes_objective(
-        self, routing_engine, sample_keys
-    ) -> None:
+    async def test_explain_decision_includes_objective(self, routing_engine, sample_keys) -> None:
         """Test that explanation includes objective."""
         request_intent = {"provider_id": "openai", "request_id": "req_obj"}
         objective = RoutingObjective(
@@ -1280,9 +1283,7 @@ class TestMultiObjectiveOptimization:
             assert 0.0 <= score <= 1.0, f"Score for {key_id} is {score}, not in [0.0, 1.0]"
 
     @pytest.mark.asyncio
-    async def test_evaluate_keys_weights_applied_correctly(
-        self, routing_engine, sample_keys
-    ):
+    async def test_evaluate_keys_weights_applied_correctly(self, routing_engine, sample_keys):
         """Test that weights are applied correctly in composite score."""
         objective = RoutingObjective(
             primary=ObjectiveType.Cost.value,
@@ -1297,9 +1298,7 @@ class TestMultiObjectiveOptimization:
         assert all(0.0 <= s <= 1.0 for s in scores.values())
 
     @pytest.mark.asyncio
-    async def test_evaluate_keys_weights_normalized(
-        self, routing_engine, sample_keys
-    ):
+    async def test_evaluate_keys_weights_normalized(self, routing_engine, sample_keys):
         """Test that weights are normalized if they don't sum to 1.0."""
         # Weights sum to 1.5, should be normalized
         objective = RoutingObjective(
@@ -1314,9 +1313,7 @@ class TestMultiObjectiveOptimization:
         assert all(0.0 <= s <= 1.0 for s in scores.values())
 
     @pytest.mark.asyncio
-    async def test_evaluate_keys_single_objective_with_weights(
-        self, routing_engine, sample_keys
-    ):
+    async def test_evaluate_keys_single_objective_with_weights(self, routing_engine, sample_keys):
         """Test that single objective with weight 1.0 works."""
         objective = RoutingObjective(
             primary=ObjectiveType.Cost.value,
@@ -1362,9 +1359,16 @@ class TestMultiObjectiveOptimization:
 
         # Explanation should mention trade-offs
         assert decision.explanation is not None
-        assert "balancing" in decision.explanation.lower() or "composite" in decision.explanation.lower()
+        assert (
+            "balancing" in decision.explanation.lower()
+            or "composite" in decision.explanation.lower()
+        )
         assert "cost" in decision.explanation.lower()
-        assert "reliability" in decision.explanation.lower() or "70%" in decision.explanation or "30%" in decision.explanation
+        assert (
+            "reliability" in decision.explanation.lower()
+            or "70%" in decision.explanation
+            or "30%" in decision.explanation
+        )
 
     @pytest.mark.asyncio
     async def test_evaluate_keys_multi_objective_includes_three_objectives(
@@ -1404,9 +1408,7 @@ class TestMultiObjectiveOptimization:
                 assert "cost" in obj_scores or "reliability" in obj_scores
 
     @pytest.mark.asyncio
-    async def test_normalize_weights_sums_to_one(
-        self, routing_engine
-    ):
+    async def test_normalize_weights_sums_to_one(self, routing_engine):
         """Test that _normalize_weights normalizes weights to sum to 1.0."""
         weights = {"cost": 0.6, "reliability": 0.4}  # Already sums to 1.0
         normalized = routing_engine._normalize_weights(weights)
@@ -1416,9 +1418,7 @@ class TestMultiObjectiveOptimization:
         assert normalized["reliability"] == pytest.approx(0.4, abs=0.01)
 
     @pytest.mark.asyncio
-    async def test_normalize_weights_normalizes_when_not_sum_to_one(
-        self, routing_engine
-    ):
+    async def test_normalize_weights_normalizes_when_not_sum_to_one(self, routing_engine):
         """Test that _normalize_weights normalizes when weights don't sum to 1.0."""
         weights = {"cost": 0.9, "reliability": 0.6}  # Sums to 1.5
         normalized = routing_engine._normalize_weights(weights)
@@ -1428,9 +1428,7 @@ class TestMultiObjectiveOptimization:
         assert normalized["cost"] / normalized["reliability"] == pytest.approx(0.9 / 0.6, abs=0.01)
 
     @pytest.mark.asyncio
-    async def test_normalize_weights_handles_zero_weights(
-        self, routing_engine
-    ):
+    async def test_normalize_weights_handles_zero_weights(self, routing_engine):
         """Test that _normalize_weights handles zero weights."""
         weights = {"cost": 0.0, "reliability": 0.0}
         normalized = routing_engine._normalize_weights(weights)
@@ -1456,9 +1454,7 @@ class TestMultiObjectiveOptimization:
         assert decision.selected_provider_id in explanation
 
     @pytest.mark.asyncio
-    async def test_explain_decision_includes_scores(
-        self, routing_engine, mock_key_manager
-    ) -> None:
+    async def test_explain_decision_includes_scores(self, routing_engine, mock_key_manager) -> None:
         """Test that explanation includes scores."""
         # Create keys with different costs
         key1 = await mock_key_manager.register_key(
@@ -1579,9 +1575,7 @@ class TestMultiObjectiveOptimization:
         assert decision.selected_key_id in explanation
 
     @pytest.mark.asyncio
-    async def test_explain_decision_formatted_readably(
-        self, routing_engine, sample_keys
-    ) -> None:
+    async def test_explain_decision_formatted_readably(self, routing_engine, sample_keys) -> None:
         """Test that explanation is formatted readably."""
         request_intent = {"provider_id": "openai", "request_id": "req_format"}
         objective = RoutingObjective(primary=ObjectiveType.Cost.value)
@@ -1656,9 +1650,7 @@ class TestMultiObjectiveOptimization:
         assert key1.id in explanation  # Filtered key should be mentioned
 
     @pytest.mark.asyncio
-    async def test_explain_decision_handles_round_robin(
-        self, routing_engine, sample_keys
-    ) -> None:
+    async def test_explain_decision_handles_round_robin(self, routing_engine, sample_keys) -> None:
         """Test that explanation works for round-robin decisions."""
         request_intent = {"provider_id": "openai", "request_id": "req_rr"}
         objective = RoutingObjective(primary=ObjectiveType.Fairness.value)
@@ -1879,7 +1871,10 @@ class TestPolicyIntegration:
         assert decision is not None
         # The objective should have constraints from policy
         assert decision.objective.constraints is not None
-        assert "max_cost" in decision.objective.constraints or "min_reliability" in decision.objective.constraints
+        assert (
+            "max_cost" in decision.objective.constraints
+            or "min_reliability" in decision.objective.constraints
+        )
 
     @pytest.mark.asyncio
     async def test_policy_application_included_in_explanation(
@@ -2016,9 +2011,7 @@ class TestPolicyIntegration:
         assert "policy" in str(exc_info.value).lower() or "filtered" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_policy_works_without_policy_engine(
-        self, routing_engine, sample_keys
-    ):
+    async def test_policy_works_without_policy_engine(self, routing_engine, sample_keys):
         """Test that routing works when policy engine is not provided."""
         request_intent = {"provider_id": "openai", "request_id": "req_no_policy"}
         objective = RoutingObjective(primary=ObjectiveType.Cost.value)
@@ -2034,9 +2027,7 @@ class TestEdgeCases:
     """Tests for edge cases and additional coverage."""
 
     @pytest.mark.asyncio
-    async def test_evaluate_keys_quality_objective_fallback(
-        self, routing_engine, mock_key_manager
-    ):
+    async def test_evaluate_keys_quality_objective_fallback(self, routing_engine, mock_key_manager):
         """Test that quality objective falls back to reliability."""
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",
@@ -2054,9 +2045,7 @@ class TestEdgeCases:
         assert 0.0 <= scores[key1.id] <= 1.1  # Can exceed 1.0 with state bonus
 
     @pytest.mark.asyncio
-    async def test_evaluate_keys_empty_list_returns_empty_dict(
-        self, routing_engine
-    ):
+    async def test_evaluate_keys_empty_list_returns_empty_dict(self, routing_engine):
         """Test that evaluate_keys with empty list returns empty dict."""
         objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
@@ -2182,9 +2171,7 @@ class TestEdgeCases:
         assert key1.id in scores
 
     @pytest.mark.asyncio
-    async def test_score_by_cost_all_costs_equal(
-        self, routing_engine, mock_key_manager
-    ):
+    async def test_score_by_cost_all_costs_equal(self, routing_engine, mock_key_manager):
         """Test cost scoring when all costs are equal."""
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",
@@ -2354,4 +2341,3 @@ class TestEdgeCases:
         # Constrained should penalize by 15% (0.8 * 0.85 = 0.68)
         assert adjusted_scores[key1.id] < scores[key1.id]
         assert adjusted_scores[key1.id] == pytest.approx(0.68, abs=0.01)
-

@@ -299,7 +299,9 @@ class MongoStateStore(StateStore):
             if provider_id is None:
                 docs = await APIKeyDocument.find_all().to_list()
             else:
-                docs = await APIKeyDocument.find(APIKeyDocument.provider_id == provider_id).to_list()
+                docs = await APIKeyDocument.find(
+                    APIKeyDocument.provider_id == provider_id
+                ).to_list()
 
             # Convert documents to domain models
             keys = [doc.to_domain_model() for doc in docs]
@@ -341,9 +343,7 @@ class MongoStateStore(StateStore):
                 await doc.insert()
         except Exception as e:
             error_msg = f"Failed to save quota state for key {state.key_id}: {e}"
-            logger.error(
-                "mongodb_save_quota_error", key_id=state.key_id, error=error_msg
-            )
+            logger.error("mongodb_save_quota_error", key_id=state.key_id, error=error_msg)
             raise StateStoreError(error_msg) from e
 
     async def get_quota_state(self, key_id: str) -> QuotaState | None:
@@ -366,9 +366,7 @@ class MongoStateStore(StateStore):
 
         try:
             # Use Beanie find_one() with key_id index
-            doc = await QuotaStateDocument.find_one(
-                QuotaStateDocument.key_id == key_id
-            )
+            doc = await QuotaStateDocument.find_one(QuotaStateDocument.key_id == key_id)
             if doc is None:
                 return None
             # Convert Beanie document to domain model
@@ -400,9 +398,7 @@ class MongoStateStore(StateStore):
             await doc.insert()
         except Exception as e:
             error_msg = f"Failed to save routing decision {decision.id}: {e}"
-            logger.error(
-                "mongodb_save_decision_error", decision_id=decision.id, error=error_msg
-            )
+            logger.error("mongodb_save_decision_error", decision_id=decision.id, error=error_msg)
             raise StateStoreError(error_msg) from e
 
     async def save_state_transition(self, transition: StateTransition) -> None:
@@ -618,4 +614,3 @@ class MongoStateStore(StateStore):
             error_msg = f"Failed to query state: {e}"
             logger.error("mongodb_query_error", error=error_msg)
             raise StateStoreError(error_msg) from e
-

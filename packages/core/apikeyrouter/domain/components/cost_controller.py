@@ -807,7 +807,9 @@ class CostController:
                     "original_model": original_model if downgrade_attempted else None,
                     "downgrade_model": request_intent.model if downgrade_attempted else None,
                     "original_cost": float(cost_estimate.amount),
-                    "downgrade_cost": float(new_cost_estimate.amount) if downgrade_successful else None,
+                    "downgrade_cost": float(new_cost_estimate.amount)
+                    if downgrade_successful
+                    else None,
                 },
                 metadata={"request_id": getattr(request_intent, "request_id", None)},
             )
@@ -955,16 +957,16 @@ class CostController:
                     # Try to get estimated cost from routing decision metadata
                     cost_data = result.metadata.get("estimated_cost")
                     if cost_data:
-                            estimated_data = {
-                                "cost_estimate": CostEstimate(**cost_data)
-                                if isinstance(cost_data, dict)
-                                else cost_data,
-                                "provider_id": getattr(result, "selected_provider_id", None)
-                                or provider_id,
-                                "model": result.metadata.get("model") or model,
-                                "key_id": getattr(result, "selected_key_id", None) or key_id,
-                            }
-                            break
+                        estimated_data = {
+                            "cost_estimate": CostEstimate(**cost_data)
+                            if isinstance(cost_data, dict)
+                            else cost_data,
+                            "provider_id": getattr(result, "selected_provider_id", None)
+                            or provider_id,
+                            "model": result.metadata.get("model") or model,
+                            "key_id": getattr(result, "selected_key_id", None) or key_id,
+                        }
+                        break
 
         # If still no estimated cost found, log warning and return None
         if not estimated_data:
@@ -1180,4 +1182,3 @@ class CostController:
                 "actual_cost": float(reconciliation.actual_cost),
             },
         )
-

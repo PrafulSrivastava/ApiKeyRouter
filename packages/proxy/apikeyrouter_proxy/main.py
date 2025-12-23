@@ -17,7 +17,9 @@ app = FastAPI(
 
 # Add middleware in order (last added is first executed)
 # Security headers should be added first (outermost)
-app.add_middleware(SecurityHeadersMiddleware, enable_hsts=os.getenv("ENABLE_HSTS", "false").lower() == "true")
+app.add_middleware(
+    SecurityHeadersMiddleware, enable_hsts=os.getenv("ENABLE_HSTS", "false").lower() == "true"
+)
 
 # CORS middleware
 app.add_middleware(CORSMiddleware)
@@ -32,4 +34,3 @@ app.add_middleware(AuthenticationMiddleware)
 # from apikeyrouter_proxy.api import v1, management
 # app.include_router(v1.router, prefix="/v1")
 # app.include_router(management.router, prefix="/api/v1")
-

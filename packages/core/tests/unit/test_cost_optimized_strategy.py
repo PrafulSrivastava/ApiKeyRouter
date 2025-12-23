@@ -35,9 +35,7 @@ class MockObservabilityManager(ObservabilityManager):
         """Emit event to mock store."""
         pass
 
-    async def log(
-        self, level: str, message: str, context: dict | None = None
-    ) -> None:
+    async def log(self, level: str, message: str, context: dict | None = None) -> None:
         """Log to mock store."""
         self.logs.append({"level": level, "message": message, "context": context or {}})
 
@@ -211,9 +209,7 @@ async def test_score_keys_uses_provider_adapter_when_available(
         )
     }
 
-    scores = await cost_strategy.score_keys(
-        sample_keys, sample_request_intent, providers=providers
-    )
+    scores = await cost_strategy.score_keys(sample_keys, sample_request_intent, providers=providers)
 
     # All keys should use the adapter's cost estimate (0.005)
     # So all should have equal scores
@@ -221,9 +217,7 @@ async def test_score_keys_uses_provider_adapter_when_available(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_fallback_to_metadata(
-    cost_strategy, sample_keys, sample_request_intent
-):
+async def test_score_keys_fallback_to_metadata(cost_strategy, sample_keys, sample_request_intent):
     """Test that strategy falls back to metadata when adapter unavailable."""
     # No providers provided, should use metadata
     scores = await cost_strategy.score_keys(sample_keys, sample_request_intent)
@@ -234,9 +228,7 @@ async def test_score_keys_fallback_to_metadata(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_normalizes_scores(
-    cost_strategy, sample_keys, sample_request_intent
-):
+async def test_score_keys_normalizes_scores(cost_strategy, sample_keys, sample_request_intent):
     """Test that scores are normalized to 0.0-1.0 range."""
     scores = await cost_strategy.score_keys(sample_keys, sample_request_intent)
 
@@ -300,9 +292,7 @@ async def test_filter_by_quota_state_filters_exhausted(
 
 
 @pytest.mark.asyncio
-async def test_apply_quota_multipliers_boosts_abundant(
-    cost_strategy, sample_keys
-):
+async def test_apply_quota_multipliers_boosts_abundant(cost_strategy, sample_keys):
     """Test that abundant keys get score boost."""
     from datetime import datetime, timedelta
 
@@ -380,9 +370,7 @@ async def test_select_key_handles_ties(cost_strategy, sample_keys):
 
 
 @pytest.mark.asyncio
-async def test_generate_explanation_includes_cost(
-    cost_strategy, sample_request_intent
-):
+async def test_generate_explanation_includes_cost(cost_strategy, sample_request_intent):
     """Test that explanation includes cost information."""
     from datetime import datetime, timedelta
 
@@ -421,9 +409,7 @@ async def test_generate_explanation_includes_cost(
 
 
 @pytest.mark.asyncio
-async def test_generate_explanation_includes_alternatives(
-    cost_strategy, sample_request_intent
-):
+async def test_generate_explanation_includes_alternatives(cost_strategy, sample_request_intent):
     """Test that explanation includes cost comparison with alternatives."""
 
     cost_estimate = CostEstimate(
@@ -454,9 +440,7 @@ async def test_generate_explanation_includes_alternatives(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_empty_list_returns_empty_dict(
-    cost_strategy, sample_request_intent
-):
+async def test_score_keys_empty_list_returns_empty_dict(cost_strategy, sample_request_intent):
     """Test that scoring empty list returns empty dict."""
     scores = await cost_strategy.score_keys([], sample_request_intent)
     assert scores == {}
@@ -478,20 +462,15 @@ async def test_score_keys_equal_costs_returns_equal_scores(
 
 
 @pytest.mark.asyncio
-async def test_filter_by_quota_state_no_quota_engine_returns_all(
-    mock_observability, sample_keys
-):
+async def test_filter_by_quota_state_no_quota_engine_returns_all(mock_observability, sample_keys):
     """Test that filter_by_quota_state returns all keys when no quota engine."""
     strategy = CostOptimizedStrategy(
         observability_manager=mock_observability,
         quota_awareness_engine=None,
     )
 
-    filtered_keys, quota_states, filtered_out = await strategy.filter_by_quota_state(
-        sample_keys
-    )
+    filtered_keys, quota_states, filtered_out = await strategy.filter_by_quota_state(sample_keys)
 
     assert len(filtered_keys) == len(sample_keys)
     assert quota_states == {}
     assert filtered_out == []
-

@@ -843,7 +843,9 @@ class TestInMemoryStateStoreOtherMethods:
 
         assert len(results) == 3  # transitions at hours 1, 2, 3
         assert all(
-            base_time + timedelta(hours=1) <= t.transition_timestamp <= base_time + timedelta(hours=3)
+            base_time + timedelta(hours=1)
+            <= t.transition_timestamp
+            <= base_time + timedelta(hours=3)
             for t in results
         )
 
@@ -1123,7 +1125,9 @@ class TestInMemoryStateStoreOtherMethods:
         results = await store.query_state(query)
 
         assert len(results) == 2  # key0 and key2
-        assert all(key.provider_id == "openai" and key.state == KeyState.Available for key in results)
+        assert all(
+            key.provider_id == "openai" and key.state == KeyState.Available for key in results
+        )
 
     @pytest.mark.asyncio
     async def test_query_state_performance_under_10ms(self) -> None:
@@ -1204,6 +1208,7 @@ class TestInMemoryStateStoreOtherMethods:
         end_time = time.perf_counter()
 
         elapsed_ms = (end_time - start_time) * 1000
-        assert elapsed_ms < 10.0, f"query_state with pagination took {elapsed_ms:.3f}ms, expected <10ms"
+        assert (
+            elapsed_ms < 10.0
+        ), f"query_state with pagination took {elapsed_ms:.3f}ms, expected <10ms"
         assert len(results) == 50
-

@@ -33,9 +33,7 @@ async def state_store_with_keys():
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_key_lookup_time(
-    benchmark, state_store_with_keys
-):
+async def test_benchmark_key_lookup_time(benchmark, state_store_with_keys):
     """Benchmark StateStore.get_key() time with 100 keys.
 
     Target: p95 < 1ms
@@ -58,9 +56,7 @@ async def test_benchmark_key_lookup_time(
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_key_manager_get_key_time(
-    benchmark, state_store_with_keys
-):
+async def test_benchmark_key_manager_get_key_time(benchmark, state_store_with_keys):
     """Benchmark KeyManager.get_key() time with 100 keys."""
     state_store, key_manager, keys = state_store_with_keys
 
@@ -80,9 +76,7 @@ async def test_benchmark_key_manager_get_key_time(
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_get_eligible_keys_time(
-    benchmark, state_store_with_keys
-):
+async def test_benchmark_get_eligible_keys_time(benchmark, state_store_with_keys):
     """Benchmark KeyManager.get_eligible_keys() time with 100 keys."""
     state_store, key_manager, keys = state_store_with_keys
 
@@ -99,9 +93,7 @@ async def test_benchmark_get_eligible_keys_time(
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_key_lookup_random_keys(
-    benchmark, state_store_with_keys
-):
+async def test_benchmark_key_lookup_random_keys(benchmark, state_store_with_keys):
     """Benchmark key lookup with random key selection."""
     import random
 
@@ -117,4 +109,3 @@ async def test_benchmark_key_lookup_random_keys(
     # Verify result is valid
     assert result is not None
     assert result.id in [key.id for key in keys]
-

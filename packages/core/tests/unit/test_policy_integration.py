@@ -81,11 +81,13 @@ class MockObservabilityManager(ObservabilityManager):
         metadata: dict | None = None,
     ) -> None:
         """Emit event to mock store."""
-        self.events.append({
-            "event_type": event_type,
-            "payload": payload,
-            "metadata": metadata or {},
-        })
+        self.events.append(
+            {
+                "event_type": event_type,
+                "payload": payload,
+                "metadata": metadata or {},
+            }
+        )
 
     async def log(
         self,
@@ -104,9 +106,7 @@ class MockKeyManager(KeyManager):
         """Initialize mock key manager with keys."""
         self._keys = keys
 
-    async def get_eligible_keys(
-        self, provider_id: str | None = None
-    ) -> list[APIKey]:
+    async def get_eligible_keys(self, provider_id: str | None = None) -> list[APIKey]:
         """Get eligible keys."""
         keys = self._keys
         if provider_id:
@@ -201,9 +201,7 @@ async def test_route_request_without_policy_engine_works(
     request_intent = {"provider_id": "openai", "request_id": "req_no_policy"}
     objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-    decision = await routing_engine_without_policy.route_request(
-        request_intent, objective
-    )
+    decision = await routing_engine_without_policy.route_request(request_intent, objective)
 
     assert decision is not None
     assert decision.selected_key_id in ["key1", "key2"]
@@ -236,9 +234,7 @@ async def test_route_request_with_policy_engine_filters_keys(
     request_intent = {"provider_id": "openai", "request_id": "req_policy"}
     objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-    decision = await routing_engine_with_policy.route_request(
-        request_intent, objective
-    )
+    decision = await routing_engine_with_policy.route_request(request_intent, objective)
 
     # key2 should be filtered out (low reliability: 20/25 = 0.8, which is exactly 0.8, so it should pass)
     # Actually, let's use a stricter min_reliability to filter key2
@@ -275,9 +271,7 @@ async def test_route_request_policy_blocks_provider(
     request_intent = {"provider_id": "openai", "request_id": "req_block"}
     objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-    decision = await routing_engine_with_policy.route_request(
-        request_intent, objective
-    )
+    decision = await routing_engine_with_policy.route_request(request_intent, objective)
 
     # key3 (anthropic) should be filtered out
     assert decision is not None
@@ -309,22 +303,22 @@ async def test_route_request_policy_explanation_includes_policies(
     request_intent = {"provider_id": "openai", "request_id": "req_expl"}
     objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-    decision = await routing_engine_with_policy.route_request(
-        request_intent, objective
-    )
+    decision = await routing_engine_with_policy.route_request(request_intent, objective)
 
     # Explanation should mention policies
     assert decision.explanation is not None
     # Policy should be applied even if no keys are filtered
     # Check if policy info is in explanation (might be in different format)
     explanation_lower = decision.explanation.lower()
-    assert "policy" in explanation_lower or "policy1" in decision.explanation or "applied" in explanation_lower
+    assert (
+        "policy" in explanation_lower
+        or "policy1" in decision.explanation
+        or "applied" in explanation_lower
+    )
 
 
 @pytest.mark.asyncio
-async def test_route_request_policy_rejects_routing(
-    routing_engine_with_policy, mock_policy_engine
-):
+async def test_route_request_policy_rejects_routing(routing_engine_with_policy, mock_policy_engine):
     """Test that policy can reject routing entirely."""
     # Create a policy that rejects routing
     policy = Policy(
@@ -339,6 +333,7 @@ async def test_route_request_policy_rejects_routing(
     # Mock evaluate_policy to return not allowed
     async def evaluate_policy(policy_obj, context):
         from apikeyrouter.domain.models.policy import PolicyResult
+
         return PolicyResult(
             allowed=False,
             reason="Policy rejects routing",
@@ -395,15 +390,18 @@ async def test_route_request_policy_hierarchy_precedence(
     request_intent = {"provider_id": "openai", "request_id": "req_precedence"}
     objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-    decision = await routing_engine_with_policy.route_request(
-        request_intent, objective
-    )
+    decision = await routing_engine_with_policy.route_request(request_intent, objective)
 
     # Both policies should be evaluated
     assert decision is not None
     # Higher priority policy (policy2) should be applied first
     explanation_lower = decision.explanation.lower()
-    assert "policy" in explanation_lower or "policy1" in decision.explanation or "policy2" in decision.explanation or "applied" in explanation_lower
+    assert (
+        "policy" in explanation_lower
+        or "policy1" in decision.explanation
+        or "policy2" in decision.explanation
+        or "applied" in explanation_lower
+    )
 
 
 @pytest.mark.asyncio
@@ -463,12 +461,9 @@ async def test_route_request_policy_constraints_merged_into_objective(
     request_intent = {"provider_id": "openai", "request_id": "req_constraints"}
     objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-    decision = await routing_engine_with_policy.route_request(
-        request_intent, objective
-    )
+    decision = await routing_engine_with_policy.route_request(request_intent, objective)
 
     # Policy constraints should be merged into objective
     assert decision is not None
     # The objective should have constraints from policy
     assert decision.objective.constraints is not None or "policy" in decision.explanation.lower()
-

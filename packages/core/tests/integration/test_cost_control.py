@@ -124,16 +124,12 @@ class TestCostControlAndBudgetEnforcement:
     """Tests for cost control and budget enforcement."""
 
     @pytest.mark.asyncio
-    async def test_budget_check_before_execution(
-        self, router_with_cost_controller, mock_adapter
-    ):
+    async def test_budget_check_before_execution(self, router_with_cost_controller, mock_adapter):
         """Test budget check before execution."""
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        key = await router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create budget
         budget = await cost_controller.create_budget(
@@ -178,9 +174,7 @@ class TestCostControlAndBudgetEnforcement:
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        await router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        await router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create budget with hard enforcement and low limit
         budget = await cost_controller.create_budget(
@@ -214,9 +208,7 @@ class TestCostControlAndBudgetEnforcement:
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        key = await router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create budget with soft enforcement and low limit
         budget = await cost_controller.create_budget(
@@ -244,16 +236,12 @@ class TestCostControlAndBudgetEnforcement:
         assert response.key_used == key.id
 
     @pytest.mark.asyncio
-    async def test_cost_reconciliation(
-        self, router_with_cost_controller, mock_adapter
-    ):
+    async def test_cost_reconciliation(self, router_with_cost_controller, mock_adapter):
         """Test cost reconciliation."""
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        key = await router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create budget
         budget = await cost_controller.create_budget(
@@ -311,16 +299,12 @@ class TestCostControlAndBudgetEnforcement:
         assert updated_budget.current_spend >= budget.current_spend
 
     @pytest.mark.asyncio
-    async def test_per_provider_budget_enforcement(
-        self, router_with_cost_controller, mock_adapter
-    ):
+    async def test_per_provider_budget_enforcement(self, router_with_cost_controller, mock_adapter):
         """Test per-provider budget enforcement."""
         router, cost_controller = router_with_cost_controller
 
         # Register key
-        await router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        await router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create per-provider budget with hard enforcement
         budget = await cost_controller.create_budget(
@@ -348,19 +332,13 @@ class TestCostControlAndBudgetEnforcement:
             await router.route(request_intent)
 
     @pytest.mark.asyncio
-    async def test_per_key_budget_enforcement(
-        self, router_with_cost_controller, mock_adapter
-    ):
+    async def test_per_key_budget_enforcement(self, router_with_cost_controller, mock_adapter):
         """Test per-key budget enforcement."""
         router, cost_controller = router_with_cost_controller
 
         # Register multiple keys
-        key1 = await router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Create per-key budget for key1 with hard enforcement
         budget = await cost_controller.create_budget(
@@ -386,4 +364,3 @@ class TestCostControlAndBudgetEnforcement:
 
         # Verify key2 was used (not key1)
         assert response.key_used == key2.id
-

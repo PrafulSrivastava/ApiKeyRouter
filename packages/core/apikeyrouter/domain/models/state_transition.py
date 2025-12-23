@@ -49,7 +49,3 @@ class StateTransition(BaseModel):
         frozen=True,  # Immutable audit trail
         validate_assignment=True,
     )
-
-
-
-

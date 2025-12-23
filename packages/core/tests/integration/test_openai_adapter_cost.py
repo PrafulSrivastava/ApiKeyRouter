@@ -134,7 +134,12 @@ class TestOpenAIAdapterCostEstimation:
 
         intent2 = RequestIntent(
             model="gpt-4",
-            messages=[Message(role="user", content="This is a much longer message that should result in more tokens being estimated.")],  # Long message
+            messages=[
+                Message(
+                    role="user",
+                    content="This is a much longer message that should result in more tokens being estimated.",
+                )
+            ],  # Long message
         )
         estimate2 = await adapter.estimate_cost(intent2)
 
@@ -180,7 +185,9 @@ class TestOpenAIAdapterCostEstimation:
         assert estimate.breakdown["input_cost"] >= 0
         assert estimate.breakdown["output_cost"] >= 0
         # Total should equal sum of breakdown
-        assert abs(estimate.amount - (estimate.breakdown["input_cost"] + estimate.breakdown["output_cost"])) < Decimal("0.0001")
+        assert abs(
+            estimate.amount - (estimate.breakdown["input_cost"] + estimate.breakdown["output_cost"])
+        ) < Decimal("0.0001")
 
     @pytest.mark.asyncio
     async def test_estimate_cost_model_variants(self) -> None:
@@ -217,5 +224,7 @@ class TestOpenAIAdapterCostEstimation:
 
         estimate = await adapter.estimate_cost(intent)
 
-        assert estimate.total_tokens_estimate == estimate.input_tokens_estimate + estimate.output_tokens_estimate
-
+        assert (
+            estimate.total_tokens_estimate
+            == estimate.input_tokens_estimate + estimate.output_tokens_estimate
+        )

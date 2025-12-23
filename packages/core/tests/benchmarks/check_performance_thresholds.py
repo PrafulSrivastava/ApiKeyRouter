@@ -71,8 +71,7 @@ def check_thresholds(results: dict[str, float]) -> tuple[bool, list[str]]:
         if p95_ms > target:
             all_passed = False
             error_msg = (
-                f"Benchmark '{benchmark_name}' exceeded target: "
-                f"p95={p95_ms:.2f}ms > {target}ms"
+                f"Benchmark '{benchmark_name}' exceeded target: " f"p95={p95_ms:.2f}ms > {target}ms"
             )
             errors.append(error_msg)
 
@@ -113,4 +112,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

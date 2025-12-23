@@ -159,4 +159,3 @@ class APIKey(BaseModel):
             "cooldown_until": self.cooldown_until.isoformat() if self.cooldown_until else None,
             "metadata": self.metadata,
         }
-

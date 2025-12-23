@@ -219,7 +219,10 @@ class TestRoutingDecision:
         assert decision.objective == objective
         assert decision.eligible_keys == ["key_1", "key_2", "key_3"]
         assert len(decision.evaluation_results) == 3
-        assert decision.explanation == "Selected key_1 as it had the lowest cost while maintaining acceptable reliability"
+        assert (
+            decision.explanation
+            == "Selected key_1 as it had the lowest cost while maintaining acceptable reliability"
+        )
         assert decision.confidence == 0.92
         assert len(decision.alternatives_considered) == 1
         assert decision.alternatives_considered[0] == alt_route
@@ -463,4 +466,3 @@ class TestRoutingDecision:
                 confidence=0.9,
             )
             assert decision.objective.primary == obj_type.value
-

@@ -33,7 +33,9 @@ async def mongo_store(mongodb_url: str) -> MongoStateStore:
         await client.admin.command("ping")
         client.close()
     except Exception:
-        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+        pytest.skip(
+            "MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL"
+        )
 
     return MongoStateStore(
         connection_url=mongodb_url,
@@ -305,4 +307,3 @@ async def test_database_name_configurable():
 
     # Cleanup
     await store.close()
-

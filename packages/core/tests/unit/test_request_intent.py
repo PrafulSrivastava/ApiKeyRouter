@@ -70,9 +70,7 @@ class TestMessage:
         msg = Message(
             role="assistant",
             content="",  # Empty content allowed when tool_calls present
-            tool_calls=[
-                {"id": "call_1", "type": "function", "function": {"name": "get_weather"}}
-            ],
+            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "get_weather"}}],
         )
         assert msg.tool_calls is not None
         assert len(msg.tool_calls) == 1
@@ -187,4 +185,3 @@ class TestRequestIntent:
         assert intent.messages[1].role == "user"
         assert intent.messages[2].role == "assistant"
         assert intent.messages[3].role == "user"
-

@@ -97,9 +97,7 @@ class KeyManager:
             try:
                 self._encryption_service = EncryptionService()
             except EncryptionError as e:
-                raise KeyRegistrationError(
-                    f"Failed to initialize encryption service: {e}"
-                ) from e
+                raise KeyRegistrationError(f"Failed to initialize encryption service: {e}") from e
         else:
             self._encryption_service = encryption_service
 
@@ -142,11 +140,9 @@ class KeyManager:
             # Encrypt key material before storage using EncryptionService
             # Fernet.encrypt() returns base64-encoded bytes, so we just decode to string
             encrypted_bytes = self._encryption_service.encrypt(key_material.strip())
-            encrypted_key_material = encrypted_bytes.decode('utf-8')
+            encrypted_key_material = encrypted_bytes.decode("utf-8")
         except EncryptionError as e:
-            raise KeyRegistrationError(
-                f"Failed to encrypt key material: {e}"
-            ) from e
+            raise KeyRegistrationError(f"Failed to encrypt key material: {e}") from e
 
         # Create APIKey instance with Available state
         api_key = APIKey(
@@ -161,9 +157,7 @@ class KeyManager:
             # Save to StateStore
             await self._state_store.save_key(api_key)
         except StateStoreError as e:
-            raise KeyRegistrationError(
-                f"Failed to save key to StateStore: {e}"
-            ) from e
+            raise KeyRegistrationError(f"Failed to save key to StateStore: {e}") from e
 
         # Emit key_registered event
         try:
@@ -281,9 +275,7 @@ class KeyManager:
             trigger=reason,
             context={
                 **(context or {}),
-                "cooldown_until": key.cooldown_until.isoformat()
-                if key.cooldown_until
-                else None,
+                "cooldown_until": key.cooldown_until.isoformat() if key.cooldown_until else None,
             },
         )
 
@@ -318,7 +310,11 @@ class KeyManager:
             await self._observability.log(
                 level="WARNING",
                 message=f"Failed to emit state_transition event: {e}",
-                context={"key_id": key_id, "from_state": from_state.value, "to_state": new_state.value},
+                context={
+                    "key_id": key_id,
+                    "from_state": from_state.value,
+                    "to_state": new_state.value,
+                },
             )
 
         return transition
@@ -438,9 +434,7 @@ class KeyManager:
 
         # Filter by state
         now = datetime.utcnow()
-        state_eligible_keys = [
-            key for key in all_keys if self._is_key_eligible_by_state(key, now)
-        ]
+        state_eligible_keys = [key for key in all_keys if self._is_key_eligible_by_state(key, now)]
 
         # Apply policy-based filtering if policy provided
         if policy is not None:
@@ -519,9 +513,7 @@ class KeyManager:
                 context={"key_id": key_id},
             )
 
-    async def rotate_key(
-        self, old_key_id: str, new_key_material: str
-    ) -> APIKey:
+    async def rotate_key(self, old_key_id: str, new_key_material: str) -> APIKey:
         """Rotate an API key by updating its key material while preserving key_id.
 
         Rotation preserves the key_id (stable identity) and updates only the
@@ -552,11 +544,9 @@ class KeyManager:
         try:
             # Fernet.encrypt() returns base64-encoded bytes, so we just decode to string
             encrypted_bytes = self._encryption_service.encrypt(new_key_material.strip())
-            encrypted_new_material = encrypted_bytes.decode('utf-8')
+            encrypted_new_material = encrypted_bytes.decode("utf-8")
         except EncryptionError as e:
-            raise KeyRegistrationError(
-                f"Failed to encrypt new key material: {e}"
-            ) from e
+            raise KeyRegistrationError(f"Failed to encrypt new key material: {e}") from e
 
         # Preserve key_id and all other attributes, update only key_material
         # Create new APIKey instance with updated material
@@ -655,7 +645,7 @@ class KeyManager:
             # Fernet tokens are already base64-encoded, so we just encode the string to bytes
             from datetime import datetime
 
-            encrypted_bytes = key.key_material.encode('utf-8')
+            encrypted_bytes = key.key_material.encode("utf-8")
             decrypted_material = self._encryption_service.decrypt(encrypted_bytes)
 
             # Log audit event for key access (decryption)
@@ -702,7 +692,4 @@ class KeyManager:
                     },
                 )
 
-            raise EncryptionError(
-                f"Failed to decrypt key material for key {key_id}: {e}"
-            ) from e
-
+            raise EncryptionError(f"Failed to decrypt key material for key {key_id}: {e}") from e

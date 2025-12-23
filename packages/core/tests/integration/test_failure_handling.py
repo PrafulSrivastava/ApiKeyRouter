@@ -126,15 +126,11 @@ class TestFailureHandlingAndRetry:
     """Tests for failure handling and retry workflow."""
 
     @pytest.mark.asyncio
-    async def test_failure_interpreted_correctly(
-        self, api_key_router, mock_adapter_with_failures
-    ):
+    async def test_failure_interpreted_correctly(self, api_key_router, mock_adapter_with_failures):
         """Test failure interpreted correctly."""
         # Register provider and key that will fail
         await api_key_router.register_provider("openai", mock_adapter_with_failures)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Configure adapter to fail for this key
         mock_adapter_with_failures.failure_keys = {key.id}
@@ -155,18 +151,12 @@ class TestFailureHandlingAndRetry:
         assert "Mock failure" in exc_info.value.message
 
     @pytest.mark.asyncio
-    async def test_retry_with_different_key(
-        self, api_key_router, mock_adapter_with_failures
-    ):
+    async def test_retry_with_different_key(self, api_key_router, mock_adapter_with_failures):
         """Test retry with different key."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter_with_failures)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Configure adapter to fail for key1 but succeed for key2
         mock_adapter_with_failures.failure_keys = {key1.id}
@@ -190,15 +180,11 @@ class TestFailureHandlingAndRetry:
         assert mock_adapter_with_failures.call_count.get(key1.id, 0) > 0
 
     @pytest.mark.asyncio
-    async def test_key_state_updated_on_failure(
-        self, api_key_router, mock_adapter_with_failures
-    ):
+    async def test_key_state_updated_on_failure(self, api_key_router, mock_adapter_with_failures):
         """Test key state updated on failure."""
         # Register provider and key
         await api_key_router.register_provider("openai", mock_adapter_with_failures)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Get initial failure count
         initial_key = await api_key_router.key_manager.get_key(key.id)
@@ -230,12 +216,8 @@ class TestFailureHandlingAndRetry:
         """Test non-retryable error stops retries."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter_with_failures)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Configure adapter to fail with non-retryable error for key1
         mock_adapter_with_failures.failure_keys = {key1.id}
@@ -259,18 +241,12 @@ class TestFailureHandlingAndRetry:
         assert mock_adapter_with_failures.call_count.get(key2.id, 0) == 0
 
     @pytest.mark.asyncio
-    async def test_all_keys_fail_raises_error(
-        self, api_key_router, mock_adapter_with_failures
-    ):
+    async def test_all_keys_fail_raises_error(self, api_key_router, mock_adapter_with_failures):
         """Test that when all keys fail, error is raised."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter_with_failures)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Configure adapter to fail for all keys
         mock_adapter_with_failures.failure_keys = {key1.id, key2.id}
@@ -298,15 +274,9 @@ class TestFailureHandlingAndRetry:
         """Test that retry with alternative key succeeds."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter_with_failures)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
-        key3 = await api_key_router.register_key(
-            key_material="sk-test-key-3", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
+        key3 = await api_key_router.register_key(key_material="sk-test-key-3", provider_id="openai")
 
         # Configure adapter to fail for key1 and key2, succeed for key3
         mock_adapter_with_failures.failure_keys = {key1.id, key2.id}
@@ -325,4 +295,3 @@ class TestFailureHandlingAndRetry:
         assert response is not None
         assert response.key_used == key3.id
         assert response.content == "Success response"
-

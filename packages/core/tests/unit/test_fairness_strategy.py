@@ -32,9 +32,7 @@ class MockObservabilityManager(ObservabilityManager):
         """Emit event to mock store."""
         pass
 
-    async def log(
-        self, level: str, message: str, context: dict | None = None
-    ) -> None:
+    async def log(self, level: str, message: str, context: dict | None = None) -> None:
         """Log to mock store."""
         self.logs.append({"level": level, "message": message, "context": context or {}})
 
@@ -79,9 +77,7 @@ def mock_quota_engine():
 
 
 @pytest.fixture
-def fairness_strategy(
-    mock_observability, mock_quota_engine
-) -> FairnessStrategy:
+def fairness_strategy(mock_observability, mock_quota_engine) -> FairnessStrategy:
     """Create FairnessStrategy instance."""
     return FairnessStrategy(
         observability_manager=mock_observability,
@@ -145,9 +141,7 @@ async def test_score_keys_less_used_higher_score(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_equal_usage_equal_scores(
-    fairness_strategy, sample_request_intent
-):
+async def test_score_keys_equal_usage_equal_scores(fairness_strategy, sample_request_intent):
     """Test that keys with equal usage get equal scores."""
     keys = [
         APIKey(
@@ -174,9 +168,7 @@ async def test_score_keys_equal_usage_equal_scores(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_normalizes_scores(
-    fairness_strategy, sample_keys, sample_request_intent
-):
+async def test_score_keys_normalizes_scores(fairness_strategy, sample_keys, sample_request_intent):
     """Test that scores are normalized to 0.0-1.0 range."""
     scores = await fairness_strategy.score_keys(sample_keys, sample_request_intent)
 
@@ -186,9 +178,7 @@ async def test_score_keys_normalizes_scores(
 
 
 @pytest.mark.asyncio
-async def test_calculate_relative_usage(
-    fairness_strategy, sample_keys
-):
+async def test_calculate_relative_usage(fairness_strategy, sample_keys):
     """Test that relative usage is calculated correctly."""
     relative_usage = fairness_strategy._calculate_relative_usage(sample_keys)
 
@@ -271,9 +261,7 @@ async def test_filter_by_quota_state_filters_exhausted(
 
 
 @pytest.mark.asyncio
-async def test_select_key_selects_least_used(
-    fairness_strategy, sample_keys
-):
+async def test_select_key_selects_least_used(fairness_strategy, sample_keys):
     """Test that select_key selects key with highest score (least used)."""
     scores = {"key1": 1.0, "key2": 0.5, "key3": 0.1}
 
@@ -284,9 +272,7 @@ async def test_select_key_selects_least_used(
 
 
 @pytest.mark.asyncio
-async def test_select_key_handles_ties_with_round_robin(
-    fairness_strategy, sample_keys
-):
+async def test_select_key_handles_ties_with_round_robin(fairness_strategy, sample_keys):
     """Test that select_key handles ties with round-robin."""
     scores = {"key1": 1.0, "key2": 1.0, "key3": 0.1}
 
@@ -343,27 +329,21 @@ async def test_generate_explanation_includes_usage(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_empty_list_returns_empty_dict(
-    fairness_strategy, sample_request_intent
-):
+async def test_score_keys_empty_list_returns_empty_dict(fairness_strategy, sample_request_intent):
     """Test that scoring empty list returns empty dict."""
     scores = await fairness_strategy.score_keys([], sample_request_intent)
     assert scores == {}
 
 
 @pytest.mark.asyncio
-async def test_filter_by_quota_state_no_quota_engine_returns_all(
-    mock_observability, sample_keys
-):
+async def test_filter_by_quota_state_no_quota_engine_returns_all(mock_observability, sample_keys):
     """Test that filter_by_quota_state returns all keys when no quota engine."""
     strategy = FairnessStrategy(
         observability_manager=mock_observability,
         quota_awareness_engine=None,
     )
 
-    filtered_keys, quota_states, filtered_out = await strategy.filter_by_quota_state(
-        sample_keys
-    )
+    filtered_keys, quota_states, filtered_out = await strategy.filter_by_quota_state(sample_keys)
 
     assert len(filtered_keys) == len(sample_keys)
     assert quota_states == {}
@@ -371,9 +351,7 @@ async def test_filter_by_quota_state_no_quota_engine_returns_all(
 
 
 @pytest.mark.asyncio
-async def test_score_keys_balances_load(
-    fairness_strategy, sample_request_intent
-):
+async def test_score_keys_balances_load(fairness_strategy, sample_request_intent):
     """Test that strategy balances load across keys."""
     # Create keys with different usage
     keys = [
@@ -452,6 +430,3 @@ async def test_select_key_prevents_starvation(
     assert "key1" in selected_keys
     assert "key2" in selected_keys
     assert "key3" in selected_keys
-
-
-

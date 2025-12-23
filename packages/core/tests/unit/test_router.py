@@ -93,11 +93,13 @@ class MockObservabilityManager(ObservabilityManager):
         metadata: dict | None = None,
     ) -> None:
         """Emit event to mock store."""
-        self.events.append({
-            "event_type": event_type,
-            "payload": payload,
-            "metadata": metadata or {},
-        })
+        self.events.append(
+            {
+                "event_type": event_type,
+                "payload": payload,
+                "metadata": metadata or {},
+            }
+        )
 
     async def log(
         self,
@@ -106,11 +108,13 @@ class MockObservabilityManager(ObservabilityManager):
         context: dict | None = None,
     ) -> None:
         """Log to mock store."""
-        self.logs.append({
-            "level": level,
-            "message": message,
-            "context": context or {},
-        })
+        self.logs.append(
+            {
+                "level": level,
+                "message": message,
+                "context": context or {},
+            }
+        )
 
 
 class TestApiKeyRouterInitialization:
@@ -240,9 +244,7 @@ class TestApiKeyRouterInitialization:
         """Test that router components share the same dependencies."""
         custom_store = MockStateStore()
         custom_obs = MockObservabilityManager()
-        router = ApiKeyRouter(
-            state_store=custom_store, observability_manager=custom_obs
-        )
+        router = ApiKeyRouter(state_store=custom_store, observability_manager=custom_obs)
 
         # Verify all components share the same StateStore
         assert router._key_manager._state_store is custom_store
@@ -283,10 +285,7 @@ class TestApiKeyRouterInitialization:
         """Test that RoutingEngine has reference to QuotaAwarenessEngine."""
         router = ApiKeyRouter()
 
-        assert (
-            router._routing_engine._quota_engine
-            is router._quota_awareness_engine
-        )
+        assert router._routing_engine._quota_engine is router._quota_awareness_engine
 
 
 class MockProviderAdapter(ProviderAdapter):
@@ -453,9 +452,7 @@ class TestApiKeyRouterProviderRegistration:
         await router.register_provider("test_provider", adapter1)
 
         # Try to register same provider_id again
-        with pytest.raises(
-            ValueError, match="Provider 'test_provider' is already registered"
-        ):
+        with pytest.raises(ValueError, match="Provider 'test_provider' is already registered"):
             await router.register_provider("test_provider", adapter2)
 
         # Original adapter should still be registered
@@ -1153,11 +1150,7 @@ class TestApiKeyRouterObservabilityIntegration:
         await router.route(intent)
 
         # Check that request start was logged with context
-        start_logs = [
-            log
-            for log in mock_obs.logs
-            if "Request routing started" in log["message"]
-        ]
+        start_logs = [log for log in mock_obs.logs if "Request routing started" in log["message"]]
         assert len(start_logs) > 0
         start_log = start_logs[0]
         assert "request_id" in start_log["context"]
@@ -1184,9 +1177,7 @@ class TestApiKeyRouterObservabilityIntegration:
         await router.route(intent)
 
         # Check that routing decision was logged
-        decision_logs = [
-            log for log in mock_obs.logs if "Routing decision made" in log["message"]
-        ]
+        decision_logs = [log for log in mock_obs.logs if "Routing decision made" in log["message"]]
         assert len(decision_logs) > 0
         decision_log = decision_logs[0]
         assert "key_id" in decision_log["context"]
@@ -1214,9 +1205,7 @@ class TestApiKeyRouterObservabilityIntegration:
 
         # Check that completion was logged
         completion_logs = [
-            log
-            for log in mock_obs.logs
-            if "Request completed successfully" in log["message"]
+            log for log in mock_obs.logs if "Request completed successfully" in log["message"]
         ]
         assert len(completion_logs) > 0
         completion_log = completion_logs[0]
@@ -1271,8 +1260,8 @@ class TestApiKeyRouterObservabilityIntegration:
         for log in mock_obs.logs:
             if "context" in log and log["context"] and "correlation_id" in log["context"]:
                 # Some logs might not have context, that's okay
-                    assert log["context"]["correlation_id"] is not None
-                    assert isinstance(log["context"]["correlation_id"], str)
+                assert log["context"]["correlation_id"] is not None
+                assert isinstance(log["context"]["correlation_id"], str)
 
     @pytest.mark.asyncio
     async def test_route_includes_correlation_id_in_response_metadata(
@@ -1391,4 +1380,3 @@ class TestApiKeyRouterObservabilityIntegration:
         assert "INFO" in log_levels
         # Should not have ERROR for successful request
         assert "ERROR" not in log_levels
-

@@ -138,9 +138,7 @@ class TestCapacityEstimate:
     def test_capacity_estimate_with_verification(self) -> None:
         """Test CapacityEstimate with last_verified timestamp."""
         verified_at = datetime.utcnow()
-        estimate = CapacityEstimate(
-            value=100, confidence=0.9, last_verified=verified_at
-        )
+        estimate = CapacityEstimate(value=100, confidence=0.9, last_verified=verified_at)
         assert estimate.value == 100
         assert estimate.last_verified == verified_at
 
@@ -511,4 +509,3 @@ class TestQuotaState:
         assert quota.remaining_capacity.value is None
         assert quota.remaining_capacity.min_value is None
         assert quota.remaining_capacity.max_value is None
-

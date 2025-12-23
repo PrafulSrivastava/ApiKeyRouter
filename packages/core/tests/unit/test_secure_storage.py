@@ -67,7 +67,9 @@ class MockObservabilityManager(ObservabilityManager):
         self, event_type: str, payload: dict[str, Any], metadata: dict[str, Any] | None = None
     ) -> None:
         """Record event."""
-        self.events.append({"event_type": event_type, "payload": payload, "metadata": metadata or {}})
+        self.events.append(
+            {"event_type": event_type, "payload": payload, "metadata": metadata or {}}
+        )
 
     async def log(self, level: str, message: str, context: dict[str, Any] | None = None) -> None:
         """Record log."""
@@ -311,4 +313,3 @@ class TestSecureStorage:
         assert sanitized[1]["key_material"] == "[REDACTED]"
         assert sanitized[0]["key_id"] == "key-1"
         assert sanitized[1]["key_id"] == "key-2"
-

@@ -72,9 +72,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """
         cutoff_time = current_time - self._window_seconds
         self._request_history[ip] = [
-            timestamp
-            for timestamp in self._request_history[ip]
-            if timestamp > cutoff_time
+            timestamp for timestamp in self._request_history[ip] if timestamp > cutoff_time
         ]
 
     def _check_rate_limit(self, request: Request) -> tuple[bool, int]:
@@ -138,4 +136,3 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Continue to next middleware or route handler
         response = await call_next(request)
         return response
-

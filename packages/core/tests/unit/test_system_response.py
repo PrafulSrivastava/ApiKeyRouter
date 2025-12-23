@@ -190,6 +190,7 @@ class TestSystemResponse:
         )
         # Use proper CostEstimate model
         from decimal import Decimal
+
         cost_estimate = CostEstimate(
             amount=Decimal("0.002"),
             currency="USD",
@@ -314,4 +315,3 @@ class TestSystemResponse:
         assert response.metadata.finish_reason == "stop"
         assert response.key_used == "key-abc"
         assert response.request_id == "req-789"
-

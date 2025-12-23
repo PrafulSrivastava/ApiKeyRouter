@@ -31,9 +31,7 @@ class FairnessStrategy:
         self._observability = observability_manager
         self._quota_engine = quota_awareness_engine
 
-    def _calculate_relative_usage(
-        self, keys: list[APIKey]
-    ) -> dict[str, float]:
+    def _calculate_relative_usage(self, keys: list[APIKey]) -> dict[str, float]:
         """Calculate relative usage for each key.
 
         Args:
@@ -100,9 +98,7 @@ class FairnessStrategy:
         # Score = 1.0 - normalized_usage (so less used = higher score)
         for key in eligible_keys:
             if max_usage > min_usage:
-                normalized_usage = (key.usage_count - min_usage) / (
-                    max_usage - min_usage
-                )
+                normalized_usage = (key.usage_count - min_usage) / (max_usage - min_usage)
                 # Invert: less usage = higher score
                 scores[key.id] = 1.0 - normalized_usage
             else:
@@ -196,9 +192,7 @@ class FairnessStrategy:
 
         # Select key with highest score (least used)
         max_score = max(scores.values())
-        keys_with_max_score = [
-            key_id for key_id, score in scores.items() if score == max_score
-        ]
+        keys_with_max_score = [key_id for key_id, score in scores.items() if score == max_score]
 
         # Handle ties: use round-robin if multiple keys have same score
         if len(keys_with_max_score) > 1:
@@ -264,11 +258,6 @@ class FairnessStrategy:
         )
 
         if filtered_count > 0:
-            explanation_parts.append(
-                f"({filtered_count} key(s) excluded due to exhausted quota)"
-            )
+            explanation_parts.append(f"({filtered_count} key(s) excluded due to exhausted quota)")
 
         return " ".join(explanation_parts)
-
-
-

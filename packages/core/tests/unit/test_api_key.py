@@ -267,4 +267,3 @@ class TestAPIKey:
                 state=state,
             )
             assert key.state == state
-

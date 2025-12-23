@@ -241,9 +241,7 @@ class ApiKeyRouter:
         """
         # Validate provider_id
         if not isinstance(provider_id, str):
-            raise ValueError(
-                f"provider_id must be a non-empty string, got: {type(provider_id)}"
-            )
+            raise ValueError(f"provider_id must be a non-empty string, got: {type(provider_id)}")
         provider_id = provider_id.strip()
         if not provider_id:
             raise ValueError("provider_id cannot be empty or whitespace only")
@@ -274,9 +272,7 @@ class ApiKeyRouter:
                     missing_methods.append(method_name)
 
         if missing_methods:
-            raise TypeError(
-                f"adapter is missing required methods: {', '.join(missing_methods)}"
-            )
+            raise TypeError(f"adapter is missing required methods: {', '.join(missing_methods)}")
 
         # Check for duplicate registration
         if provider_id in self._providers and not overwrite:
@@ -382,7 +378,9 @@ class ApiKeyRouter:
                 context={
                     "key_id": api_key.id,
                     "provider_id": provider_id,
-                    "state": api_key.state.value if hasattr(api_key.state, "value") else str(api_key.state),
+                    "state": api_key.state.value
+                    if hasattr(api_key.state, "value")
+                    else str(api_key.state),
                     "has_metadata": bool(metadata),
                 },
             )
@@ -392,7 +390,9 @@ class ApiKeyRouter:
                 payload={
                     "key_id": api_key.id,
                     "provider_id": provider_id,
-                    "state": api_key.state.value if hasattr(api_key.state, "value") else str(api_key.state),
+                    "state": api_key.state.value
+                    if hasattr(api_key.state, "value")
+                    else str(api_key.state),
                 },
                 metadata={
                     "timestamp": datetime.utcnow().isoformat(),
@@ -423,9 +423,7 @@ class ApiKeyRouter:
                     "error_type": type(e).__name__,
                 },
             )
-            raise KeyRegistrationError(
-                f"Failed to register key: {e}"
-            ) from e
+            raise KeyRegistrationError(f"Failed to register key: {e}") from e
 
     async def route(
         self,
@@ -720,11 +718,7 @@ class ApiKeyRouter:
                         "attempt": attempt + 1,
                         "tokens_used": tokens_used,
                         "response_time_ms": response_time_ms,
-                        "cost": (
-                            system_response.cost.amount
-                            if system_response.cost
-                            else None
-                        ),
+                        "cost": (system_response.cost.amount if system_response.cost else None),
                     },
                 )
                 await self._observability_manager.emit_event(
@@ -761,9 +755,7 @@ class ApiKeyRouter:
                         "correlation_id": correlation_id,
                         "key_id": current_key_id,
                         "error_category": (
-                            e.category.value
-                            if hasattr(e.category, "value")
-                            else str(e.category)
+                            e.category.value if hasattr(e.category, "value") else str(e.category)
                         ),
                         "error_message": e.message,
                         "retryable": e.retryable,
@@ -781,9 +773,7 @@ class ApiKeyRouter:
                         "request_id": request_id,
                         "key_id": current_key_id,
                         "error_category": (
-                            e.category.value
-                            if hasattr(e.category, "value")
-                            else str(e.category)
+                            e.category.value if hasattr(e.category, "value") else str(e.category)
                         ),
                         "error_message": e.message,
                         "retryable": e.retryable,
@@ -861,4 +851,3 @@ class ApiKeyRouter:
             if key_id not in tried_keys:
                 return key_id
         return None
-

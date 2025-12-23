@@ -438,4 +438,3 @@ class TestValidationIntegration:
             provider_id="openai",
             metadata={"account_tier": "pro", "region": "us-east-1"},
         )
-

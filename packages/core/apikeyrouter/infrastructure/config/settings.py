@@ -79,7 +79,3 @@ class RouterSettings(BaseSettings):
             RouterSettings instance.
         """
         return cls(**config)
-
-
-
-

@@ -64,9 +64,7 @@ class Policy(BaseModel):
         default=0,
         description="Priority/precedence (higher = more important, used for conflict resolution)",
     )
-    enabled: bool = Field(
-        default=True, description="Whether this policy is active"
-    )
+    enabled: bool = Field(default=True, description="Whether this policy is active")
     created_at: datetime = Field(
         default_factory=datetime.utcnow, description="When policy was created"
     )
@@ -121,6 +119,3 @@ class PolicyResult(BaseModel):
         frozen=False,
         validate_assignment=True,
     )
-
-
-

@@ -176,7 +176,10 @@ class TestOpenAIAdapterExecuteRequest:
 
             assert exc_info.value.category == ErrorCategory.AuthenticationError
             # Message can be from response body or default
-            assert "invalid" in exc_info.value.message.lower() or "authentication" in exc_info.value.message.lower()
+            assert (
+                "invalid" in exc_info.value.message.lower()
+                or "authentication" in exc_info.value.message.lower()
+            )
             assert exc_info.value.retryable is False
 
     @pytest.mark.asyncio
@@ -226,7 +229,10 @@ class TestOpenAIAdapterExecuteRequest:
                 await openai_adapter.execute_request(request_intent, api_key)
 
             assert exc_info.value.category == ErrorCategory.TimeoutError
-            assert "timed out" in exc_info.value.message.lower() or "timeout" in exc_info.value.message.lower()
+            assert (
+                "timed out" in exc_info.value.message.lower()
+                or "timeout" in exc_info.value.message.lower()
+            )
             assert exc_info.value.retryable is True
 
     @pytest.mark.asyncio
@@ -283,9 +289,7 @@ class TestOpenAIAdapterExecuteRequest:
 class TestOpenAIAdapterNormalizeResponse:
     """Tests for normalize_response method."""
 
-    def test_normalize_response_converts_openai_format(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_normalize_response_converts_openai_format(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that OpenAI response is normalized correctly."""
         openai_response = {
             "id": "chatcmpl-123",
@@ -315,9 +319,7 @@ class TestOpenAIAdapterNormalizeResponse:
         assert response.key_used == "key-1"
         assert response.request_id == "req-1"
 
-    def test_normalize_response_handles_no_choices(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_normalize_response_handles_no_choices(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that normalize_response raises error when no choices."""
         openai_response = {"choices": []}
 
@@ -353,9 +355,7 @@ class TestOpenAIAdapterNormalizeResponse:
         assert response.content == "First response"
         assert response.metadata.model_used == "gpt-4"
 
-    def test_normalize_response_handles_empty_content(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_normalize_response_handles_empty_content(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that normalize_response handles empty content gracefully."""
         openai_response = {
             "model": "gpt-4",
@@ -375,9 +375,7 @@ class TestOpenAIAdapterNormalizeResponse:
         assert response.content == ""
         assert response.metadata.tokens_used.output_tokens == 0
 
-    def test_normalize_response_handles_missing_usage(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_normalize_response_handles_missing_usage(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that normalize_response handles missing usage field gracefully."""
         openai_response = {
             "model": "gpt-4",
@@ -398,9 +396,7 @@ class TestOpenAIAdapterNormalizeResponse:
         assert response.metadata.tokens_used.output_tokens == 0
         assert response.metadata.tokens_used.total_tokens == 0
 
-    def test_normalize_response_handles_missing_model(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_normalize_response_handles_missing_model(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that normalize_response handles missing model field gracefully."""
         openai_response = {
             "choices": [
@@ -547,9 +543,7 @@ class TestOpenAIAdapterMapError:
         assert system_error.category == ErrorCategory.NetworkError
         assert system_error.retryable is True
 
-    def test_map_error_extracts_retry_after_header(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_map_error_extracts_retry_after_header(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that map_error extracts retry-after header from 429 response."""
         mock_response = MagicMock()
         mock_response.status_code = 429
@@ -564,9 +558,7 @@ class TestOpenAIAdapterMapError:
         assert system_error.retry_after == 60
         assert system_error.retryable is True
 
-    def test_map_error_extracts_retry_after_datetime(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_map_error_extracts_retry_after_datetime(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that map_error extracts retry-after as HTTP date."""
         from datetime import timedelta
 
@@ -613,9 +605,7 @@ class TestOpenAIAdapterMapError:
         assert system_error.details["param"] == "model"
         assert system_error.provider_code == "invalid_parameter"
 
-    def test_map_error_handles_missing_error_object(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_map_error_handles_missing_error_object(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that map_error handles response without error object."""
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -629,9 +619,7 @@ class TestOpenAIAdapterMapError:
         assert system_error.category == ErrorCategory.ProviderError
         assert system_error.details.get("message") == "Something went wrong"
 
-    def test_map_error_handles_non_json_response(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_map_error_handles_non_json_response(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that map_error handles non-JSON response body."""
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -645,9 +633,7 @@ class TestOpenAIAdapterMapError:
         assert system_error.category == ErrorCategory.ProviderError
         assert system_error.details.get("message") == "Internal server error - plain text"
 
-    def test_map_error_handles_missing_retry_after(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_map_error_handles_missing_retry_after(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that map_error handles missing retry-after header."""
         mock_response = MagicMock()
         mock_response.status_code = 429
@@ -661,9 +647,7 @@ class TestOpenAIAdapterMapError:
         assert system_error.category == ErrorCategory.RateLimitError
         assert system_error.retry_after is None
 
-    def test_map_error_handles_invalid_retry_after(
-        self, openai_adapter: OpenAIAdapter
-    ) -> None:
+    def test_map_error_handles_invalid_retry_after(self, openai_adapter: OpenAIAdapter) -> None:
         """Test that map_error handles invalid retry-after header."""
         mock_response = MagicMock()
         mock_response.status_code = 429
@@ -676,4 +660,3 @@ class TestOpenAIAdapterMapError:
 
         assert system_error.category == ErrorCategory.RateLimitError
         assert system_error.retry_after is None  # Should be None if parsing fails
-

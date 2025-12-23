@@ -1,2 +1,1 @@
 """Proxy service tests."""
-

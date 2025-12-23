@@ -6,4 +6,3 @@ from apikeyrouter.infrastructure.state_store.migrations.migration_runner import 
 )
 
 __all__ = ["run_migrations", "CURRENT_SCHEMA_VERSION"]
-

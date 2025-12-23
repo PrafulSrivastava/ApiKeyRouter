@@ -126,4 +126,3 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         # Continue to next middleware or route handler
         response = await call_next(request)
         return response
-

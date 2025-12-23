@@ -177,4 +177,3 @@ class Budget(BaseModel):
             f"limit_amount={self.limit_amount}, current_spend={self.current_spend}, "
             f"period={self.period.value}, warning_count={self.warning_count})"
         )
-

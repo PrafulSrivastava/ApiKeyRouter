@@ -49,9 +49,7 @@ async def routing_engine_with_keys():
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_routing_decision_time(
-    benchmark, routing_engine_with_keys
-):
+async def test_benchmark_routing_decision_time(benchmark, routing_engine_with_keys):
     """Benchmark routing decision time with 10 keys.
 
     Target: p95 < 10ms
@@ -77,9 +75,7 @@ async def test_benchmark_routing_decision_time(
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_routing_decision_cost_objective(
-    benchmark, routing_engine_with_keys
-):
+async def test_benchmark_routing_decision_cost_objective(benchmark, routing_engine_with_keys):
     """Benchmark routing decision with cost objective."""
     routing_engine, keys = routing_engine_with_keys
 
@@ -119,4 +115,3 @@ async def test_benchmark_routing_decision_reliability_objective(
 
     assert result is not None
     assert result.selected_key_id in [key.id for key in keys]
-

@@ -121,9 +121,7 @@ class RoutingEngine:
 
         # Check if multi-objective optimization is requested
         if objective.weights:
-            return await self._calculate_composite_score(
-                eligible_keys, objective, request_intent
-            )
+            return await self._calculate_composite_score(eligible_keys, objective, request_intent)
 
         # Single-objective optimization (existing behavior)
         primary_objective = objective.primary.lower()
@@ -539,10 +537,7 @@ class RoutingEngine:
             Human-readable explanation string.
         """
         # For cost objective, use strategy's explanation if cost estimate is available
-        if (
-            objective.primary.lower() == ObjectiveType.Cost.value
-            and cost_estimate is not None
-        ):
+        if objective.primary.lower() == ObjectiveType.Cost.value and cost_estimate is not None:
             explanation = self._cost_strategy.generate_explanation(
                 selected_key_id=selected_key.id,
                 cost_estimate=cost_estimate,
@@ -559,7 +554,9 @@ class RoutingEngine:
                     explanation += f" Within budget constraints (remaining: ${budget_result.remaining_budget:.2f})."
 
             if budget_filtered_count > 0:
-                explanation += f" {budget_filtered_count} key(s) excluded due to budget constraints."
+                explanation += (
+                    f" {budget_filtered_count} key(s) excluded due to budget constraints."
+                )
 
             # Append policy information if available
             if applied_policies:
@@ -573,11 +570,7 @@ class RoutingEngine:
         if objective.primary.lower() == ObjectiveType.Reliability.value:
             # Calculate success rate for explanation
             total_requests = selected_key.usage_count + selected_key.failure_count
-            success_rate = (
-                selected_key.usage_count / total_requests
-                if total_requests > 0
-                else 0.95
-            )
+            success_rate = selected_key.usage_count / total_requests if total_requests > 0 else 0.95
             explanation = self._reliability_strategy.generate_explanation(
                 selected_key_id=selected_key.id,
                 success_rate=success_rate,
@@ -641,9 +634,7 @@ class RoutingEngine:
         ]
 
         if quota_state:
-            explanation_parts.append(
-                f"({quota_state.capacity_state.value} quota state)"
-            )
+            explanation_parts.append(f"({quota_state.capacity_state.value} quota state)")
 
         explanation_parts.append(f"(highest among {eligible_count} eligible keys)")
 
@@ -712,9 +703,7 @@ class RoutingEngine:
         if ObjectiveType.Cost.value in normalized_weights:
             weight = normalized_weights[ObjectiveType.Cost.value]
             if cost_estimate:
-                trade_off_parts.append(
-                    f"cost (${cost_estimate.amount:.6f}, weight: {weight:.0%})"
-                )
+                trade_off_parts.append(f"cost (${cost_estimate.amount:.6f}, weight: {weight:.0%})")
             elif ObjectiveType.Cost.value in selected_scores:
                 trade_off_parts.append(
                     f"cost (score: {selected_scores[ObjectiveType.Cost.value]:.2f}, weight: {weight:.0%})"
@@ -753,9 +742,7 @@ class RoutingEngine:
         explanation_parts.append(f"(best composite score among {eligible_count} eligible keys)")
 
         if filtered_count > 0:
-            explanation_parts.append(
-                f"({filtered_count} key(s) excluded due to exhausted quota"
-            )
+            explanation_parts.append(f"({filtered_count} key(s) excluded due to exhausted quota")
             if budget_filtered_count > 0:
                 explanation_parts[-1] += f" and {budget_filtered_count} due to budget constraints"
             explanation_parts[-1] += ")"
@@ -858,17 +845,13 @@ class RoutingEngine:
 
         for obj in objectives_to_evaluate:
             if obj == ObjectiveType.Cost.value:
-                objective_scores[obj] = await self._score_by_cost(
-                    eligible_keys, request_intent
-                )
+                objective_scores[obj] = await self._score_by_cost(eligible_keys, request_intent)
             elif obj == ObjectiveType.Reliability.value:
                 objective_scores[obj] = await self._score_by_reliability(
                     eligible_keys, request_intent
                 )
             elif obj == ObjectiveType.Fairness.value:
-                objective_scores[obj] = await self._score_by_fairness(
-                    eligible_keys, request_intent
-                )
+                objective_scores[obj] = await self._score_by_fairness(eligible_keys, request_intent)
             elif obj == ObjectiveType.Quality.value:
                 # Quality not implemented, fallback to reliability
                 objective_scores[obj] = await self._score_by_reliability(
@@ -965,9 +948,7 @@ class RoutingEngine:
                     "reason": "no_eligible_keys",
                 },
             )
-            raise NoEligibleKeysError(
-                f"No eligible keys available for provider: {provider_id}"
-            )
+            raise NoEligibleKeysError(f"No eligible keys available for provider: {provider_id}")
 
         # Apply quota-aware filtering if QuotaAwarenessEngine is available
         if self._quota_engine is not None:
@@ -1009,9 +990,12 @@ class RoutingEngine:
         budget_filtered_keys: list[APIKey] = []
 
         if self._cost_controller is not None and request_intent_obj is not None:
-            eligible_keys, budget_results, cost_estimates, budget_filtered_keys = (
-                await self._filter_by_budget(eligible_keys, request_intent_obj, provider_id)
-            )
+            (
+                eligible_keys,
+                budget_results,
+                cost_estimates,
+                budget_filtered_keys,
+            ) = await self._filter_by_budget(eligible_keys, request_intent_obj, provider_id)
 
             if not eligible_keys:
                 # All keys filtered out by budget constraints
@@ -1244,6 +1228,7 @@ class RoutingEngine:
             if selected_budget_check.would_exceed:
                 # Check if hard enforcement would reject this
                 from apikeyrouter.domain.models.budget import EnforcementMode
+
                 violated_budgets = selected_budget_check.violated_budgets
                 for budget_id in violated_budgets:
                     budget = await self._cost_controller.get_budget(budget_id)
@@ -1428,9 +1413,7 @@ class RoutingEngine:
             )
             lines.append(f"  Constraints: {constraints_str}")
         if decision.objective.weights:
-            weights_str = ", ".join(
-                f"{k}={v:.2f}" for k, v in decision.objective.weights.items()
-            )
+            weights_str = ", ".join(f"{k}={v:.2f}" for k, v in decision.objective.weights.items())
             lines.append(f"  Weights: {weights_str}")
         lines.append("")
 
@@ -1498,7 +1481,9 @@ class RoutingEngine:
             sorted_results = sorted(
                 decision.evaluation_results.items(),
                 key=lambda x: (
-                    x[1].get("score") if isinstance(x[1], dict) and x[1].get("score") is not None else 0.0
+                    x[1].get("score")
+                    if isinstance(x[1], dict) and x[1].get("score") is not None
+                    else 0.0
                 ),
                 reverse=True,
             )
@@ -1549,7 +1534,9 @@ class RoutingEngine:
             ]
             if filtered_keys:
                 lines.append("QUOTA FILTERING:")
-                lines.append(f"  {len(filtered_keys)} key(s) filtered out due to exhausted/critical quota:")
+                lines.append(
+                    f"  {len(filtered_keys)} key(s) filtered out due to exhausted/critical quota:"
+                )
                 for key_id in filtered_keys:
                     lines.append(f"    • {key_id}")
                 lines.append("")
@@ -1561,4 +1548,3 @@ class RoutingEngine:
         lines.append("=" * 60)
 
         return "\n".join(lines)
-

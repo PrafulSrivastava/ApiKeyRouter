@@ -27,7 +27,9 @@ async def mongodb_database():
         client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
         await client.admin.command("ping")
     except Exception:
-        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+        pytest.skip(
+            "MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL"
+        )
 
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_quota"]
@@ -274,7 +276,9 @@ async def test_time_window_queries_by_reset_at_range(mongo_store: MongoStateStor
     for result in results:
         if isinstance(result, QuotaState):
             # Use timedelta tolerance for microsecond precision differences
-            assert (now - timedelta(seconds=1)) <= result.reset_at <= (tomorrow + timedelta(seconds=1))
+            assert (
+                (now - timedelta(seconds=1)) <= result.reset_at <= (tomorrow + timedelta(seconds=1))
+            )
 
 
 @pytest.mark.asyncio
@@ -382,4 +386,3 @@ async def test_save_quota_state_with_all_fields(mongo_store: MongoStateStore):
     assert retrieved.remaining_tokens is not None
     assert retrieved.remaining_tokens.value == quota.remaining_tokens.value
     assert retrieved.time_window == quota.time_window
-

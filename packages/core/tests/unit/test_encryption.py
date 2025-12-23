@@ -198,7 +198,3 @@ class TestEncryption:
 
         with pytest.raises(EncryptionError, match="Failed to decrypt"):
             service.decrypt(b"invalid-encrypted-data")
-
-
-
-

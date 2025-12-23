@@ -63,4 +63,3 @@ __all__ = [
     "EnforcementMode",
     "BudgetCheckResult",
 ]
-

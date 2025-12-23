@@ -37,9 +37,7 @@ async def quota_engine_with_key():
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_update_capacity_time(
-    benchmark, quota_engine_with_key
-):
+async def test_benchmark_update_capacity_time(benchmark, quota_engine_with_key):
     """Benchmark QuotaAwarenessEngine.update_capacity() time.
 
     Target: p95 < 5ms
@@ -59,9 +57,7 @@ async def test_benchmark_update_capacity_time(
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_get_quota_state_time(
-    benchmark, quota_engine_with_key
-):
+async def test_benchmark_get_quota_state_time(benchmark, quota_engine_with_key):
     """Benchmark QuotaAwarenessEngine.get_quota_state() time.
 
     Target: p95 < 5ms
@@ -81,9 +77,7 @@ async def test_benchmark_get_quota_state_time(
 
 @pytest.mark.benchmark
 @pytest.mark.asyncio
-async def test_benchmark_quota_calculation_with_multiple_updates(
-    benchmark, quota_engine_with_key
-):
+async def test_benchmark_quota_calculation_with_multiple_updates(benchmark, quota_engine_with_key):
     """Benchmark quota calculation with multiple sequential updates."""
     quota_engine, key = quota_engine_with_key
 
@@ -97,4 +91,3 @@ async def test_benchmark_quota_calculation_with_multiple_updates(
     # Verify quota state is updated
     quota_state = await quota_engine.get_quota_state(key.id)
     assert quota_state.used_capacity > 0
-

@@ -60,7 +60,3 @@ class HealthState(BaseModel):
         frozen=False,
         validate_assignment=True,
     )
-
-
-
-

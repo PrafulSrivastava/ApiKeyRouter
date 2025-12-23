@@ -39,8 +39,10 @@ def sanitize_for_logging(data: Any) -> Any:
     elif isinstance(data, str):
         # Check if string looks like an API key (starts with common prefixes)
         # This is a safety check, but primary protection is removing key_material fields
-        if data.startswith(("sk-", "pk-", "xai-", "claude-", "anthropic-")) and len(data) > 20:  # API keys are typically longer
-                return "[REDACTED]"
+        if (
+            data.startswith(("sk-", "pk-", "xai-", "claude-", "anthropic-")) and len(data) > 20
+        ):  # API keys are typically longer
+            return "[REDACTED]"
     return data
 
 
@@ -87,7 +89,9 @@ class DefaultObservabilityManager(ObservabilityManager):
         # Configure standard logging for structlog to wrap
         logging.basicConfig(
             level=getattr(logging, log_level.upper(), logging.INFO),
-            format="%(message)s" if json_format else "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            format="%(message)s"
+            if json_format
+            else "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
 
         self._logger = structlog.get_logger("apikeyrouter")
@@ -161,4 +165,3 @@ class DefaultObservabilityManager(ObservabilityManager):
                 log_method(sanitized_message)
         except Exception as e:
             raise ObservabilityError(f"Failed to log message: {e}") from e
-

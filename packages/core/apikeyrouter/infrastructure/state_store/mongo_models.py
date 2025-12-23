@@ -244,8 +244,12 @@ class RoutingDecisionDocument(Document):
 
         name = "routing_decisions"  # Collection name
         indexes = [
-            IndexModel([("selected_key_id", 1), ("decision_timestamp", -1)]),  # Query by key, sort by time
-            IndexModel([("selected_provider_id", 1), ("decision_timestamp", -1)]),  # Query by provider, sort by time
+            IndexModel(
+                [("selected_key_id", 1), ("decision_timestamp", -1)]
+            ),  # Query by key, sort by time
+            IndexModel(
+                [("selected_provider_id", 1), ("decision_timestamp", -1)]
+            ),  # Query by provider, sort by time
             # Optional TTL index: uncomment to enable automatic cleanup after 90 days
             # IndexModel([("decision_timestamp", 1)], expireAfterSeconds=7776000),  # 90 days in seconds
         ]
@@ -322,8 +326,12 @@ class StateTransitionDocument(Document):
 
         name = "state_transitions"  # Collection name
         indexes = [
-            IndexModel([("entity_id", 1), ("transition_timestamp", -1)]),  # Query by entity, sort by time
-            IndexModel([("entity_type", 1), ("transition_timestamp", -1)]),  # Query by type, sort by time
+            IndexModel(
+                [("entity_id", 1), ("transition_timestamp", -1)]
+            ),  # Query by entity, sort by time
+            IndexModel(
+                [("entity_type", 1), ("transition_timestamp", -1)]
+            ),  # Query by type, sort by time
             # Optional TTL index: uncomment to enable automatic cleanup after 90 days
             # IndexModel([("transition_timestamp", 1)], expireAfterSeconds=7776000),  # 90 days in seconds
         ]
@@ -396,4 +404,3 @@ async def initialize_beanie_models(database: AsyncIOMotorDatabase) -> None:
             StateTransitionDocument,
         ],
     )
-

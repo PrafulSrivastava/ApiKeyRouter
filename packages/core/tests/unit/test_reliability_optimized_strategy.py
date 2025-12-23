@@ -32,9 +32,7 @@ class MockObservabilityManager(ObservabilityManager):
         """Emit event to mock store."""
         pass
 
-    async def log(
-        self, level: str, message: str, context: dict | None = None
-    ) -> None:
+    async def log(self, level: str, message: str, context: dict | None = None) -> None:
         """Log to mock store."""
         self.logs.append({"level": level, "message": message, "context": context or {}})
 
@@ -79,9 +77,7 @@ def mock_quota_engine():
 
 
 @pytest.fixture
-def reliability_strategy(
-    mock_observability, mock_quota_engine
-) -> ReliabilityOptimizedStrategy:
+def reliability_strategy(mock_observability, mock_quota_engine) -> ReliabilityOptimizedStrategy:
     """Create ReliabilityOptimizedStrategy instance."""
     return ReliabilityOptimizedStrategy(
         observability_manager=mock_observability,
@@ -131,9 +127,7 @@ async def sample_keys() -> list[APIKey]:
 
 
 @pytest.mark.asyncio
-async def test_calculate_success_rate_high_success(
-    reliability_strategy, sample_keys
-):
+async def test_calculate_success_rate_high_success(reliability_strategy, sample_keys):
     """Test that high success rate is calculated correctly."""
     # key1: 100 successes, 0 failures = 100% success rate
     success_rate = reliability_strategy._calculate_success_rate(sample_keys[0])
@@ -166,9 +160,7 @@ async def test_calculate_success_rate_zero_usage(
 
 
 @pytest.mark.asyncio
-async def test_get_key_state_score_available_highest(
-    reliability_strategy, sample_keys
-):
+async def test_get_key_state_score_available_highest(reliability_strategy, sample_keys):
     """Test that Available state gets highest score."""
     score = reliability_strategy._get_key_state_score(sample_keys[0])
     assert score == 1.0
@@ -232,9 +224,7 @@ async def test_score_keys_high_success_rate_higher_score(
     reliability_strategy, sample_keys, sample_request_intent
 ):
     """Test that keys with higher success rate get higher scores."""
-    scores = await reliability_strategy.score_keys(
-        sample_keys, sample_request_intent
-    )
+    scores = await reliability_strategy.score_keys(sample_keys, sample_request_intent)
 
     # key1 has 100% success rate, should have highest score
     # key3 has 50% success rate, should have lowest score
@@ -306,9 +296,7 @@ async def test_score_keys_considers_quota_state(
         ),
     }
 
-    scores = await reliability_strategy.score_keys(
-        sample_keys[:2], sample_request_intent
-    )
+    scores = await reliability_strategy.score_keys(sample_keys[:2], sample_request_intent)
 
     # key1 should have higher score due to abundant quota state
     # (even though both have same success rate, key1 has better quota)
@@ -320,9 +308,7 @@ async def test_score_keys_normalizes_scores(
     reliability_strategy, sample_keys, sample_request_intent
 ):
     """Test that scores are normalized to 0.0-1.0 range."""
-    scores = await reliability_strategy.score_keys(
-        sample_keys, sample_request_intent
-    )
+    scores = await reliability_strategy.score_keys(sample_keys, sample_request_intent)
 
     # All scores should be in valid range
     for key_id, score in scores.items():
@@ -360,8 +346,8 @@ async def test_filter_by_quota_state_filters_exhausted(
         ),
     }
 
-    filtered_keys, quota_states, filtered_out = (
-        await reliability_strategy.filter_by_quota_state(sample_keys[:2])
+    filtered_keys, quota_states, filtered_out = await reliability_strategy.filter_by_quota_state(
+        sample_keys[:2]
     )
 
     # key1 should be filtered out (exhausted)
@@ -373,9 +359,7 @@ async def test_filter_by_quota_state_filters_exhausted(
 
 
 @pytest.mark.asyncio
-async def test_select_key_selects_highest_score(
-    reliability_strategy, sample_keys
-):
+async def test_select_key_selects_highest_score(reliability_strategy, sample_keys):
     """Test that select_key selects key with highest score."""
     scores = {"key1": 0.9, "key2": 0.5, "key3": 0.1}
 
@@ -464,18 +448,14 @@ async def test_score_keys_handles_zero_usage_gracefully(
 
 
 @pytest.mark.asyncio
-async def test_filter_by_quota_state_no_quota_engine_returns_all(
-    mock_observability, sample_keys
-):
+async def test_filter_by_quota_state_no_quota_engine_returns_all(mock_observability, sample_keys):
     """Test that filter_by_quota_state returns all keys when no quota engine."""
     strategy = ReliabilityOptimizedStrategy(
         observability_manager=mock_observability,
         quota_awareness_engine=None,
     )
 
-    filtered_keys, quota_states, filtered_out = await strategy.filter_by_quota_state(
-        sample_keys
-    )
+    filtered_keys, quota_states, filtered_out = await strategy.filter_by_quota_state(sample_keys)
 
     assert len(filtered_keys) == len(sample_keys)
     assert quota_states == {}
@@ -508,4 +488,3 @@ async def test_score_keys_uses_provided_quota_states(
 
     # Should use provided quota states
     assert "key1" in scores
-

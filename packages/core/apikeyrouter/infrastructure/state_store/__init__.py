@@ -10,4 +10,3 @@ except ImportError:
     MongoStateStore = None  # type: ignore[assignment, misc]
 
 __all__ = ["InMemoryStateStore", "MongoStateStore"]
-

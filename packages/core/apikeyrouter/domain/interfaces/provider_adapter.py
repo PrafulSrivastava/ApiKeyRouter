@@ -60,11 +60,7 @@ class ProviderAdapter(ABC):
     """
 
     @abstractmethod
-    async def execute_request(
-        self,
-        intent: RequestIntent,
-        key: APIKey
-    ) -> SystemResponse:
+    async def execute_request(self, intent: RequestIntent, key: APIKey) -> SystemResponse:
         """Execute request with provider using system-defined intent.
 
         This method translates the system's RequestIntent into provider-specific
@@ -98,10 +94,7 @@ class ProviderAdapter(ABC):
         ...
 
     @abstractmethod
-    def normalize_response(
-        self,
-        provider_response: Any
-    ) -> SystemResponse:
+    def normalize_response(self, provider_response: Any) -> SystemResponse:
         """Normalize provider response to system format.
 
         Converts provider-specific response objects into the standardized
@@ -131,10 +124,7 @@ class ProviderAdapter(ABC):
         ...
 
     @abstractmethod
-    def map_error(
-        self,
-        provider_error: Exception
-    ) -> SystemError:
+    def map_error(self, provider_error: Exception) -> SystemError:
         """Map provider error to system error category.
 
         Converts provider-specific exceptions into standardized SystemError
@@ -197,10 +187,7 @@ class ProviderAdapter(ABC):
         ...
 
     @abstractmethod
-    async def estimate_cost(
-        self,
-        request_intent: RequestIntent
-    ) -> CostEstimate:
+    async def estimate_cost(self, request_intent: RequestIntent) -> CostEstimate:
         """Estimate cost for a request before execution.
 
         Calculates the expected cost for a request based on the RequestIntent.
@@ -278,25 +265,15 @@ class ProviderAdapterProtocol(Protocol):
     annotations are strings by default.
     """
 
-    async def execute_request(
-        self,
-        intent: RequestIntent,
-        key: APIKey
-    ) -> SystemResponse:
+    async def execute_request(self, intent: RequestIntent, key: APIKey) -> SystemResponse:
         """Execute request with provider."""
         ...
 
-    def normalize_response(
-        self,
-        provider_response: Any
-    ) -> SystemResponse:
+    def normalize_response(self, provider_response: Any) -> SystemResponse:
         """Normalize provider response to system format."""
         ...
 
-    def map_error(
-        self,
-        provider_error: Exception
-    ) -> SystemError:
+    def map_error(self, provider_error: Exception) -> SystemError:
         """Map provider error to system error category."""
         ...
 
@@ -304,10 +281,7 @@ class ProviderAdapterProtocol(Protocol):
         """Declare what this provider supports."""
         ...
 
-    async def estimate_cost(
-        self,
-        request_intent: RequestIntent
-    ) -> CostEstimate:
+    async def estimate_cost(self, request_intent: RequestIntent) -> CostEstimate:
         """Estimate cost for a request before execution."""
         ...
 
@@ -320,4 +294,3 @@ __all__ = [
     "ProviderAdapter",
     "ProviderAdapterProtocol",
 ]
-

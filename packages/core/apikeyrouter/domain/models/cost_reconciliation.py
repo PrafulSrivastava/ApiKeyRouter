@@ -118,5 +118,3 @@ class CostReconciliation(BaseModel):
             f"estimated={self.estimated_cost}, actual={self.actual_cost}, "
             f"error={self.error_amount} ({self.error_percentage:.2f}%))"
         )
-
-

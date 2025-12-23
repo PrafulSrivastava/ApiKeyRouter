@@ -106,23 +106,15 @@ class TestQuotaExhaustionAndProactiveRouting:
     """Tests for quota exhaustion and proactive routing."""
 
     @pytest.mark.asyncio
-    async def test_quota_exhausted_key_avoided(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_quota_exhausted_key_avoided(self, api_key_router, mock_adapter):
         """Test quota exhausted key avoided."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Manually set key1 to exhausted state
-        quota_state = await api_key_router.quota_awareness_engine.get_quota_state(
-            key1.id
-        )
+        quota_state = await api_key_router.quota_awareness_engine.get_quota_state(key1.id)
         # Update to exhausted
         from apikeyrouter.domain.models.quota_state import QuotaState
 
@@ -153,23 +145,15 @@ class TestQuotaExhaustionAndProactiveRouting:
         assert response.key_used == key2.id
 
     @pytest.mark.asyncio
-    async def test_proactive_routing_away_from_critical_keys(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_proactive_routing_away_from_critical_keys(self, api_key_router, mock_adapter):
         """Test proactive routing away from critical keys."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Set key1 to critical state
-        quota_state = await api_key_router.quota_awareness_engine.get_quota_state(
-            key1.id
-        )
+        quota_state = await api_key_router.quota_awareness_engine.get_quota_state(key1.id)
         from apikeyrouter.domain.models.quota_state import QuotaState
 
         critical_quota = QuotaState(
@@ -199,23 +183,15 @@ class TestQuotaExhaustionAndProactiveRouting:
         assert response.key_used == key2.id
 
     @pytest.mark.asyncio
-    async def test_exhaustion_prediction_affects_routing(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_exhaustion_prediction_affects_routing(self, api_key_router, mock_adapter):
         """Test exhaustion prediction affects routing."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Set key1 to constrained state (close to exhaustion)
-        quota_state = await api_key_router.quota_awareness_engine.get_quota_state(
-            key1.id
-        )
+        quota_state = await api_key_router.quota_awareness_engine.get_quota_state(key1.id)
         from apikeyrouter.domain.models.quota_state import QuotaState
 
         constrained_quota = QuotaState(
@@ -247,15 +223,11 @@ class TestQuotaExhaustionAndProactiveRouting:
         assert response.key_used in [key1.id, key2.id]
 
     @pytest.mark.asyncio
-    async def test_quota_reset_handled_correctly(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_quota_reset_handled_correctly(self, api_key_router, mock_adapter):
         """Test quota reset handled correctly."""
         # Register provider and key
         await api_key_router.register_provider("openai", mock_adapter)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Set key to exhausted state with reset in the past (should reset)
         from apikeyrouter.domain.models.quota_state import QuotaState
@@ -285,18 +257,12 @@ class TestQuotaExhaustionAndProactiveRouting:
         assert quota_state.remaining_capacity.value > 0
 
     @pytest.mark.asyncio
-    async def test_all_keys_exhausted_raises_error(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_all_keys_exhausted_raises_error(self, api_key_router, mock_adapter):
         """Test that when all keys are exhausted, error is raised."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Set both keys to exhausted state
         from apikeyrouter.domain.models.quota_state import QuotaState
@@ -329,18 +295,12 @@ class TestQuotaExhaustionAndProactiveRouting:
             await api_key_router.route(request_intent)
 
     @pytest.mark.asyncio
-    async def test_abundant_keys_preferred(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_abundant_keys_preferred(self, api_key_router, mock_adapter):
         """Test that abundant keys are preferred over constrained keys."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
-        key2 = await api_key_router.register_key(
-            key_material="sk-test-key-2", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
+        key2 = await api_key_router.register_key(key_material="sk-test-key-2", provider_id="openai")
 
         # Set key1 to constrained, key2 to abundant
         from apikeyrouter.domain.models.quota_state import QuotaState
@@ -383,4 +343,3 @@ class TestQuotaExhaustionAndProactiveRouting:
 
         # With quota multipliers, abundant key should be preferred
         assert response.key_used == key2.id
-

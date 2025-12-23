@@ -81,8 +81,7 @@ class TestProviderAdapterABC:
         }
 
         assert abstract_methods == expected_methods, (
-            f"Expected abstract methods {expected_methods}, "
-            f"but found {abstract_methods}"
+            f"Expected abstract methods {expected_methods}, " f"but found {abstract_methods}"
         )
 
     def test_interface_documentation_exists(self) -> None:
@@ -142,8 +141,7 @@ class TestProviderAdapterProtocol:
 
         # Protocol methods should include all expected methods
         assert expected_methods.issubset(protocol_methods), (
-            f"Protocol missing methods. Expected {expected_methods}, "
-            f"found {protocol_methods}"
+            f"Protocol missing methods. Expected {expected_methods}, " f"found {protocol_methods}"
         )
 
     def test_protocol_documentation_exists(self) -> None:
@@ -170,8 +168,7 @@ class TestProviderAdapterInterface:
         protocol_methods = {
             name
             for name in dir(ProviderAdapterProtocol)
-            if not name.startswith("_")
-            and callable(getattr(ProviderAdapterProtocol, name, None))
+            if not name.startswith("_") and callable(getattr(ProviderAdapterProtocol, name, None))
         }
 
         # Both should have the core methods
@@ -196,4 +193,3 @@ class TestProviderAdapterInterface:
 
         assert ProviderAdapter is not None
         assert ProviderAdapterProtocol is not None
-

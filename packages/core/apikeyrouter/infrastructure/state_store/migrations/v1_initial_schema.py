@@ -57,4 +57,3 @@ async def migrate_v1_initial_schema(database: AsyncIOMotorDatabase) -> None:
     # await state_transitions_collection.create_index(
     #     [("transition_timestamp", 1)], expireAfterSeconds=7776000  # 90 days
     # )
-

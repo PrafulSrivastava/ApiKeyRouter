@@ -114,11 +114,13 @@ class MockObservabilityManager(ObservabilityManager):
         """Emit event to mock store."""
         if self.emit_error:
             raise self.emit_error
-        self.events.append({
-            "event_type": event_type,
-            "payload": payload,
-            "metadata": metadata or {},
-        })
+        self.events.append(
+            {
+                "event_type": event_type,
+                "payload": payload,
+                "metadata": metadata or {},
+            }
+        )
 
     async def log(
         self,
@@ -127,11 +129,13 @@ class MockObservabilityManager(ObservabilityManager):
         context: dict | None = None,
     ) -> None:
         """Log to mock store."""
-        self.logs.append({
-            "level": level,
-            "message": message,
-            "context": context or {},
-        })
+        self.logs.append(
+            {
+                "level": level,
+                "message": message,
+                "context": context or {},
+            }
+        )
 
 
 class TestQuotaAwarenessEngine:
@@ -538,9 +542,7 @@ class TestQuotaAwarenessEngine:
         await engine.update_capacity(key_id, 0)
 
         # Check that quota_reset event was emitted
-        reset_events = [
-            e for e in mock_observability.events if e["event_type"] == "quota_reset"
-        ]
+        reset_events = [e for e in mock_observability.events if e["event_type"] == "quota_reset"]
         assert len(reset_events) == 1
         assert reset_events[0]["payload"]["key_id"] == key_id
 
@@ -652,9 +654,7 @@ class TestQuotaAwarenessEngine:
         assert mock_state_store.save_quota_state_called
         # Check that initialization was logged
         init_logs = [
-            log
-            for log in mock_observability.logs
-            if "Initialized quota state" in log["message"]
+            log for log in mock_observability.logs if "Initialized quota state" in log["message"]
         ]
         assert len(init_logs) > 0
 
@@ -794,9 +794,7 @@ class TestQuotaAwarenessEngine:
             await engine.update_capacity(key_id, 10)
 
         # Check that error was logged
-        error_logs = [
-            log for log in mock_observability.logs if log["level"] == "ERROR"
-        ]
+        error_logs = [log for log in mock_observability.logs if log["level"] == "ERROR"]
         assert len(error_logs) > 0
         assert "Failed to save quota state" in error_logs[0]["message"]
 
@@ -978,9 +976,7 @@ class TestQuotaAwarenessEngine:
         assert result.capacity_state == CapacityState.Abundant
 
         # Verify reset event was emitted
-        reset_events = [
-            e for e in mock_observability.events if e["event_type"] == "quota_reset"
-        ]
+        reset_events = [e for e in mock_observability.events if e["event_type"] == "quota_reset"]
         assert len(reset_events) == 1
 
         # Verify capacity_updated event was also emitted
@@ -1219,9 +1215,7 @@ class TestQuotaAwarenessEngine:
 
         # Create KeyManager
         key_manager = KeyManager(mock_state_store, mock_observability)
-        engine = QuotaAwarenessEngine(
-            mock_state_store, mock_observability, key_manager=key_manager
-        )
+        engine = QuotaAwarenessEngine(mock_state_store, mock_observability, key_manager=key_manager)
 
         key_id = "test_key_with_manager"
         reset_at = datetime.utcnow() + timedelta(hours=1)
@@ -3042,7 +3036,6 @@ class TestQuotaAwarenessEngine:
         assert result.remaining_tokens.value == 49900  # 50000 (reset) - 100 (consumed)
         assert result.used_tokens == 100  # Reset to 0, then +100
 
-
     @pytest.mark.asyncio
     async def test_update_capacity_negative_tokens_raises_error(
         self, engine: QuotaAwarenessEngine, mock_state_store: MockStateStore
@@ -3077,9 +3070,7 @@ class TestQuotaAwarenessEngine:
             await engine.update_capacity(key_id, consumed=1)
 
         # Should have logged an error
-        error_logs = [
-            log for log in engine._observability.logs if log["level"] == "ERROR"
-        ]
+        error_logs = [log for log in engine._observability.logs if log["level"] == "ERROR"]
         assert len(error_logs) > 0
         assert "Failed to save quota state" in error_logs[-1]["message"]
 
@@ -3113,9 +3104,7 @@ class TestQuotaAwarenessEngine:
         assert result.remaining_capacity.value == 499
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to emit capacity_updated event" in warning_logs[-1]["message"]
 
@@ -3293,14 +3282,10 @@ class TestQuotaAwarenessEngine:
         assert result.capacity_state == CapacityState.Abundant
 
         # Should have logged a warning (check for quota_reset event, not just last warning)
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         # Check if any warning is about quota_reset event
-        reset_warnings = [
-            log for log in warning_logs if "quota_reset event" in log["message"]
-        ]
+        reset_warnings = [log for log in warning_logs if "quota_reset event" in log["message"]]
         assert len(reset_warnings) > 0
 
     @pytest.mark.asyncio
@@ -3330,9 +3315,7 @@ class TestQuotaAwarenessEngine:
             await engine.handle_quota_response(key_id, response)
 
         # Should have logged an error
-        error_logs = [
-            log for log in engine._observability.logs if log["level"] == "ERROR"
-        ]
+        error_logs = [log for log in engine._observability.logs if log["level"] == "ERROR"]
         assert len(error_logs) > 0
         assert "Failed to save quota state after 429" in error_logs[-1]["message"]
 
@@ -3380,9 +3363,7 @@ class TestQuotaAwarenessEngine:
         assert result.capacity_state == CapacityState.Exhausted
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in mock_observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in mock_observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to update key state after 429" in warning_logs[-1]["message"]
 
@@ -3418,9 +3399,7 @@ class TestQuotaAwarenessEngine:
         assert result.capacity_state == CapacityState.Exhausted
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to emit quota_exhausted event" in warning_logs[-1]["message"]
 
@@ -3454,9 +3433,7 @@ class TestQuotaAwarenessEngine:
             engine._extract_status_code(response)
 
     @pytest.mark.asyncio
-    async def test_extract_retry_after_http_date_format(
-        self, engine: QuotaAwarenessEngine
-    ) -> None:
+    async def test_extract_retry_after_http_date_format(self, engine: QuotaAwarenessEngine) -> None:
         """Test retry-after header parsing with HTTP date format."""
         import time
         from datetime import datetime, timedelta
@@ -3492,9 +3469,7 @@ class TestQuotaAwarenessEngine:
         assert retry_after == 60
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to parse retry-after header" in warning_logs[-1]["message"]
 
@@ -3508,9 +3483,7 @@ class TestQuotaAwarenessEngine:
         assert headers["retry-after"] == "60"
 
     @pytest.mark.asyncio
-    async def test_extract_headers_from_dict_no_headers(
-        self, engine: QuotaAwarenessEngine
-    ) -> None:
+    async def test_extract_headers_from_dict_no_headers(self, engine: QuotaAwarenessEngine) -> None:
         """Test header extraction from dict without headers."""
         response = {"status_code": 429}
         headers = engine._extract_headers(response)
@@ -3546,9 +3519,7 @@ class TestQuotaAwarenessEngine:
             await engine.calculate_usage_rate(key_id)
 
         # Should have logged an error
-        error_logs = [
-            log for log in engine._observability.logs if log["level"] == "ERROR"
-        ]
+        error_logs = [log for log in engine._observability.logs if log["level"] == "ERROR"]
         assert len(error_logs) > 0
         assert "Failed to query routing decisions" in error_logs[-1]["message"]
 
@@ -3636,9 +3607,7 @@ class TestQuotaAwarenessEngine:
         assert prediction is None
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "unknown token capacity" in warning_logs[-1]["message"]
 
@@ -3759,9 +3728,7 @@ class TestQuotaAwarenessEngine:
         assert uncertainty in [UncertaintyLevel.Medium, UncertaintyLevel.High]
 
     @pytest.mark.asyncio
-    async def test_apply_uncertainty_adjustment_unknown(
-        self, engine: QuotaAwarenessEngine
-    ) -> None:
+    async def test_apply_uncertainty_adjustment_unknown(self, engine: QuotaAwarenessEngine) -> None:
         """Test uncertainty adjustment for Unknown level."""
         adjusted = engine._apply_uncertainty_adjustment(100.0, UncertaintyLevel.Unknown)
         # Unknown should reduce by 50%
@@ -3816,9 +3783,7 @@ class TestQuotaAwarenessEngine:
         assert result is not None
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to get exhaustion prediction" in warning_logs[-1]["message"]
 
@@ -3858,9 +3823,7 @@ class TestQuotaAwarenessEngine:
         assert result is not None
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to save capacity state transition" in warning_logs[-1]["message"]
 
@@ -3896,13 +3859,10 @@ class TestQuotaAwarenessEngine:
         assert result is not None
 
         # Should have logged a warning (check for state_transition event, not just last warning)
-        warning_logs = [
-            log for log in engine._observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in engine._observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         # Check if any warning is about state_transition event
         transition_warnings = [
             log for log in warning_logs if "state_transition event" in log["message"]
         ]
         assert len(transition_warnings) > 0
-

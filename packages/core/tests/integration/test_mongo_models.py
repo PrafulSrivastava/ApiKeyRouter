@@ -41,7 +41,9 @@ async def mongodb_database():
         await test_client.admin.command("ping")
         test_client.close()
     except Exception:
-        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+        pytest.skip(
+            "MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL"
+        )
 
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_models"]
@@ -356,4 +358,3 @@ async def test_domain_model_to_document_conversion(initialized_beanie):
     assert doc.total_capacity == quota.total_capacity
     assert doc.remaining_tokens is not None
     assert doc.remaining_tokens.value == quota.remaining_tokens.value
-

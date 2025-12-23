@@ -97,11 +97,13 @@ class MockObservabilityManager(ObservabilityManager):
         """Emit event to mock store."""
         if self.emit_error:
             raise self.emit_error
-        self.events.append({
-            "event_type": event_type,
-            "payload": payload,
-            "metadata": metadata or {},
-        })
+        self.events.append(
+            {
+                "event_type": event_type,
+                "payload": payload,
+                "metadata": metadata or {},
+            }
+        )
 
     async def log(
         self,
@@ -110,11 +112,13 @@ class MockObservabilityManager(ObservabilityManager):
         context: dict | None = None,
     ) -> None:
         """Log to mock store."""
-        self.logs.append({
-            "level": level,
-            "message": message,
-            "context": context or {},
-        })
+        self.logs.append(
+            {
+                "level": level,
+                "message": message,
+                "context": context or {},
+            }
+        )
 
 
 class TestKeyManager:
@@ -307,9 +311,7 @@ class TestKeyManager:
 
         # Should have logged a warning
         assert len(self.observability.logs) > 0
-        warning_logs = [
-            log for log in self.observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in self.observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to emit key_registered event" in warning_logs[0]["message"]
 
@@ -887,9 +889,7 @@ class TestKeyManagerEligibilityFiltering:
         assert eligible[0].id == key.id
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in self.observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in self.observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Policy evaluation failed" in warning_logs[-1]["message"]
 
@@ -945,9 +945,7 @@ class TestKeyManagerEligibilityFiltering:
         )
 
         eligible_openai = await self.key_manager.get_eligible_keys(provider_id="openai")
-        eligible_anthropic = await self.key_manager.get_eligible_keys(
-            provider_id="anthropic"
-        )
+        eligible_anthropic = await self.key_manager.get_eligible_keys(provider_id="anthropic")
 
         assert len(eligible_openai) == 1
         assert eligible_openai[0].id == openai_key.id
@@ -1074,9 +1072,7 @@ class TestKeyManagerRevocationAndRotation:
         await self.key_manager.revoke_key(key.id)
 
         # Verify event was emitted
-        revoked_events = [
-            e for e in self.observability.events if e["event_type"] == "key_revoked"
-        ]
+        revoked_events = [e for e in self.observability.events if e["event_type"] == "key_revoked"]
         assert len(revoked_events) == 1
         event = revoked_events[0]
         assert event["payload"]["key_id"] == key.id
@@ -1180,9 +1176,7 @@ class TestKeyManagerRevocationAndRotation:
         )
 
         # Verify event was emitted
-        rotated_events = [
-            e for e in self.observability.events if e["event_type"] == "key_rotated"
-        ]
+        rotated_events = [e for e in self.observability.events if e["event_type"] == "key_rotated"]
         assert len(rotated_events) == 1
         event = rotated_events[0]
         assert event["payload"]["key_id"] == key.id
@@ -1229,7 +1223,10 @@ class TestKeyManagerRevocationAndRotation:
             # Create new KeyManager instance that will fail to initialize EncryptionService
             from apikeyrouter.infrastructure.utils.encryption import EncryptionError
 
-            with pytest.raises((KeyRegistrationError, EncryptionError), match="Failed to encrypt|APIKEYROUTER_ENCRYPTION_KEY"):
+            with pytest.raises(
+                (KeyRegistrationError, EncryptionError),
+                match="Failed to encrypt|APIKEYROUTER_ENCRYPTION_KEY",
+            ):
                 # Need to create a new KeyManager that will try to initialize EncryptionService
                 # without the key
                 from apikeyrouter.infrastructure.utils.encryption import EncryptionService
@@ -1342,9 +1339,7 @@ class TestKeyManagerRevocationAndRotation:
         assert transition.to_state == KeyState.Throttled.value
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in self.observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in self.observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to emit state_transition event" in warning_logs[-1]["message"]
 
@@ -1390,9 +1385,7 @@ class TestKeyManagerRevocationAndRotation:
         assert revoked_key.state == KeyState.Disabled
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in self.observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in self.observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to emit key_revoked event" in warning_logs[-1]["message"]
 
@@ -1447,9 +1440,7 @@ class TestKeyManagerRevocationAndRotation:
         assert rotated_key.id == key.id
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in self.observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in self.observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to save rotation transition" in warning_logs[-1]["message"]
 
@@ -1477,9 +1468,7 @@ class TestKeyManagerRevocationAndRotation:
         assert rotated_key.id == key.id
 
         # Should have logged a warning
-        warning_logs = [
-            log for log in self.observability.logs if log["level"] == "WARNING"
-        ]
+        warning_logs = [log for log in self.observability.logs if log["level"] == "WARNING"]
         assert len(warning_logs) > 0
         assert "Failed to emit key_rotated event" in warning_logs[-1]["message"]
 
@@ -1511,6 +1500,7 @@ class TestKeyManagerRevocationAndRotation:
 
         # Make key1 fail on state update (simulate error)
         import asyncio
+
         await asyncio.sleep(1.1)
 
         # Temporarily break key1's state update
@@ -1530,9 +1520,7 @@ class TestKeyManagerRevocationAndRotation:
         assert len(recovered) >= 0  # May recover key2 or neither if key1 blocks
 
         # Should have logged an error
-        _error_logs = [
-            log for log in self.observability.logs if log["level"] == "ERROR"
-        ]
+        _error_logs = [log for log in self.observability.logs if log["level"] == "ERROR"]
         # Note: The error might be logged, but recovery continues
 
         # Restore original method
@@ -1622,7 +1610,11 @@ class TestKeyManagerRevocationAndRotation:
         # Verify secret key material never appears in logs or events
         assert secret_key not in all_text
         # Verify key_id appears (which is safe) - check in events or logs
-        assert key.id in all_text or len(self.observability.logs) > 0 or len(self.observability.events) > 0
+        assert (
+            key.id in all_text
+            or len(self.observability.logs) > 0
+            or len(self.observability.events) > 0
+        )
 
     @pytest.mark.asyncio
     async def test_key_material_not_in_error_messages(self) -> None:
@@ -1671,4 +1663,3 @@ class TestKeyManagerRevocationAndRotation:
 
         decrypted = await key_manager.get_key_material(key.id)
         assert decrypted == "sk-test-custom-encryption"
-

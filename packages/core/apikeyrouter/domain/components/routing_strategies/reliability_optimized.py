@@ -173,7 +173,7 @@ class ReliabilityOptimizedStrategy:
                 failure_ratio = key.failure_count / (key.usage_count + key.failure_count)
                 if failure_ratio > 0.1:  # More than 10% failure rate
                     # Apply penalty: reduce score by failure_ratio
-                    composite_score *= (1.0 - failure_ratio * 0.5)  # Max 50% penalty
+                    composite_score *= 1.0 - failure_ratio * 0.5  # Max 50% penalty
 
             scores[key.id] = max(0.0, min(1.0, composite_score))
 
@@ -268,9 +268,7 @@ class ReliabilityOptimizedStrategy:
 
         # Select key with highest score (most reliable)
         max_score = max(scores.values())
-        keys_with_max_score = [
-            key_id for key_id, score in scores.items() if score == max_score
-        ]
+        keys_with_max_score = [key_id for key_id, score in scores.items() if score == max_score]
 
         # Handle ties: select first key (deterministic)
         selected_key_id = keys_with_max_score[0]
@@ -304,14 +302,14 @@ class ReliabilityOptimizedStrategy:
         explanation_parts = [f"Selected key {selected_key_id}"]
 
         # Include success rate
-        explanation_parts.append(
-            f"with reliability score based on {success_rate:.1%} success rate"
-        )
+        explanation_parts.append(f"with reliability score based on {success_rate:.1%} success rate")
 
         # Include usage statistics
         if usage_count > 0 or failure_count > 0:
             total = usage_count + failure_count
-            explanation_parts.append(f"({usage_count} successes, {failure_count} failures out of {total} requests)")
+            explanation_parts.append(
+                f"({usage_count} successes, {failure_count} failures out of {total} requests)"
+            )
 
         # Include quota state
         if quota_state:
@@ -320,11 +318,6 @@ class ReliabilityOptimizedStrategy:
         explanation_parts.append(f"(highest reliability among {eligible_count} eligible keys)")
 
         if filtered_count > 0:
-            explanation_parts.append(
-                f"({filtered_count} key(s) excluded due to exhausted quota)"
-            )
+            explanation_parts.append(f"({filtered_count} key(s) excluded due to exhausted quota)")
 
         return " ".join(explanation_parts)
-
-
-

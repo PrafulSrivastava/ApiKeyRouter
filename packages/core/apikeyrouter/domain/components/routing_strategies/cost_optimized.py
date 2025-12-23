@@ -231,9 +231,7 @@ class CostOptimizedStrategy:
 
         # Select key with highest score (lowest cost)
         max_score = max(scores.values())
-        keys_with_max_score = [
-            key_id for key_id, score in scores.items() if score == max_score
-        ]
+        keys_with_max_score = [key_id for key_id, score in scores.items() if score == max_score]
 
         # Handle ties: select first key (deterministic)
         selected_key_id = keys_with_max_score[0]
@@ -266,9 +264,7 @@ class CostOptimizedStrategy:
 
         # Include cost information
         if cost_estimate:
-            explanation_parts.append(
-                f"with lowest estimated cost of ${cost_estimate.amount:.6f}"
-            )
+            explanation_parts.append(f"with lowest estimated cost of ${cost_estimate.amount:.6f}")
         else:
             explanation_parts.append("with lowest estimated cost")
 
@@ -289,12 +285,6 @@ class CostOptimizedStrategy:
         explanation_parts.append(f"(highest score among {eligible_count} eligible keys)")
 
         if filtered_count > 0:
-            explanation_parts.append(
-                f"({filtered_count} key(s) excluded due to exhausted quota)"
-            )
+            explanation_parts.append(f"({filtered_count} key(s) excluded due to exhausted quota)")
 
         return " ".join(explanation_parts)
-
-
-
-

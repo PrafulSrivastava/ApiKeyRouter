@@ -84,9 +84,7 @@ class RoutingObjective(BaseModel):
         # Also allow "latency" as mentioned in architecture docs
         valid_objectives.add("latency")
         if v.lower() not in valid_objectives:
-            raise ValueError(
-                f"Primary objective must be one of {valid_objectives}, got {v}"
-            )
+            raise ValueError(f"Primary objective must be one of {valid_objectives}, got {v}")
         return v.lower()
 
     @field_validator("secondary")
@@ -202,4 +200,3 @@ class RoutingDecision(BaseModel):
         if not v or not v.strip():
             raise ValueError("Explanation is required and cannot be empty")
         return v.strip()
-

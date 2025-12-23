@@ -139,7 +139,9 @@ class TestOpenAIAdapterHealth:
     @pytest.mark.asyncio
     async def test_get_health_cache_expires(self) -> None:
         """Test that health status cache expires after TTL."""
-        adapter = OpenAIAdapter(base_url="https://api.openai.com/v1", health_check_ttl=0.1)  # Very short TTL
+        adapter = OpenAIAdapter(
+            base_url="https://api.openai.com/v1", health_check_ttl=0.1
+        )  # Very short TTL
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
@@ -243,7 +245,3 @@ class TestOpenAIAdapterHealth:
             from datetime import datetime
 
             assert isinstance(health.last_check, datetime)
-
-
-
-

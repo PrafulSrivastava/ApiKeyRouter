@@ -1386,9 +1386,7 @@ class TestCostControllerSoftEnforcement:
         )
 
         # Verify budget_warning event was emitted
-        warning_events = [
-            e for e in observability.events if e["event_type"] == "budget_warning"
-        ]
+        warning_events = [e for e in observability.events if e["event_type"] == "budget_warning"]
         assert len(warning_events) == 1
         event = warning_events[0]
         assert event["payload"]["budget_id"] == budget.id
@@ -1565,9 +1563,7 @@ class TestCostControllerSoftEnforcement:
         assert request_intent.model == "gpt-3.5-turbo"
 
         # Verify downgrade info in event
-        warning_events = [
-            e for e in observability.events if e["event_type"] == "budget_warning"
-        ]
+        warning_events = [e for e in observability.events if e["event_type"] == "budget_warning"]
         assert len(warning_events) == 1
         event = warning_events[0]
         assert event["payload"]["downgrade_attempted"] is True
@@ -1625,9 +1621,7 @@ class TestCostControllerSoftEnforcement:
         assert request_intent.model == original_model
 
         # Verify downgrade failure in event
-        warning_events = [
-            e for e in observability.events if e["event_type"] == "budget_warning"
-        ]
+        warning_events = [e for e in observability.events if e["event_type"] == "budget_warning"]
         assert len(warning_events) == 1
         event = warning_events[0]
         assert event["payload"]["downgrade_attempted"] is True
@@ -1911,9 +1905,7 @@ class TestCostControllerCostReconciliation:
 
         # Should log warning
         warning_logs = [
-            log
-            for log in observability.logs
-            if "Estimated cost not found" in log["message"]
+            log for log in observability.logs if "Estimated cost not found" in log["message"]
         ]
         assert len(warning_logs) == 1
 
@@ -2157,4 +2149,3 @@ class TestCostControllerCostReconciliation:
         assert reconciliation2 is not None
         # When both are 0, error percentage should be 0%
         assert reconciliation2.error_percentage == 0.0
-

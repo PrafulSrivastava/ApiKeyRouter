@@ -139,15 +139,11 @@ class TestSuccessfulRequestRouting:
         assert response.metadata.tokens_used.total_tokens == 15
 
     @pytest.mark.asyncio
-    async def test_routing_decision_made_correctly(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_routing_decision_made_correctly(self, api_key_router, mock_adapter):
         """Test routing decision made correctly."""
         # Register provider and keys
         await api_key_router.register_provider("openai", mock_adapter)
-        key1 = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key1 = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create request intent
         request_intent = RequestIntent(
@@ -168,20 +164,14 @@ class TestSuccessfulRequestRouting:
         assert response.metadata.correlation_id is not None
 
     @pytest.mark.asyncio
-    async def test_quota_state_updated_after_request(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_quota_state_updated_after_request(self, api_key_router, mock_adapter):
         """Test quota state updated after request."""
         # Register provider and key
         await api_key_router.register_provider("openai", mock_adapter)
-        key = await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        key = await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Get initial quota state
-        initial_quota = await api_key_router.quota_awareness_engine.get_quota_state(
-            key.id
-        )
+        initial_quota = await api_key_router.quota_awareness_engine.get_quota_state(key.id)
         initial_used = initial_quota.used_capacity
 
         # Create and route request
@@ -193,9 +183,7 @@ class TestSuccessfulRequestRouting:
         await api_key_router.route(request_intent)
 
         # Verify quota state was updated
-        updated_quota = await api_key_router.quota_awareness_engine.get_quota_state(
-            key.id
-        )
+        updated_quota = await api_key_router.quota_awareness_engine.get_quota_state(key.id)
         assert updated_quota.used_capacity >= initial_used
         # Should have consumed tokens (15 total tokens from mock response)
         assert updated_quota.used_capacity == initial_used + 15
@@ -205,9 +193,7 @@ class TestSuccessfulRequestRouting:
         """Test cost recorded."""
         # Register provider and key
         await api_key_router.register_provider("openai", mock_adapter)
-        await api_key_router.register_key(
-            key_material="sk-test-key-1", provider_id="openai"
-        )
+        await api_key_router.register_key(key_material="sk-test-key-1", provider_id="openai")
 
         # Create and route request
         request_intent = RequestIntent(
@@ -222,9 +208,7 @@ class TestSuccessfulRequestRouting:
         assert response.cost.amount == Decimal("0.001")
 
     @pytest.mark.asyncio
-    async def test_multiple_keys_routing_distribution(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_multiple_keys_routing_distribution(self, api_key_router, mock_adapter):
         """Test that routing distributes across multiple keys."""
         # Register provider and multiple keys
         await api_key_router.register_provider("openai", mock_adapter)
@@ -244,18 +228,14 @@ class TestSuccessfulRequestRouting:
 
         used_keys = set()
         for _ in range(5):
-            response = await api_key_router.route(
-                request_intent, objective="fairness"
-            )
+            response = await api_key_router.route(request_intent, objective="fairness")
             used_keys.add(response.key_used)
 
         # With fairness objective, should distribute across keys
         assert len(used_keys) > 1, "Should use multiple keys with fairness objective"
 
     @pytest.mark.asyncio
-    async def test_routing_with_different_objectives(
-        self, api_key_router, mock_adapter
-    ):
+    async def test_routing_with_different_objectives(self, api_key_router, mock_adapter):
         """Test routing with different objectives."""
         # Register provider and keys with different metadata
         await api_key_router.register_provider("openai", mock_adapter)
@@ -277,20 +257,13 @@ class TestSuccessfulRequestRouting:
         )
 
         # Test cost objective
-        response_cost = await api_key_router.route(
-            request_intent, objective="cost"
-        )
+        response_cost = await api_key_router.route(request_intent, objective="cost")
         assert response_cost.key_used in [key1.id, key2.id]
 
         # Test reliability objective
-        response_reliability = await api_key_router.route(
-            request_intent, objective="reliability"
-        )
+        response_reliability = await api_key_router.route(request_intent, objective="reliability")
         assert response_reliability.key_used in [key1.id, key2.id]
 
         # Test fairness objective
-        response_fairness = await api_key_router.route(
-            request_intent, objective="fairness"
-        )
+        response_fairness = await api_key_router.route(request_intent, objective="fairness")
         assert response_fairness.key_used in [key1.id, key2.id]
-

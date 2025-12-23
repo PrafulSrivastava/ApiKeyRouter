@@ -322,7 +322,10 @@ class InMemoryStateStore(StateStore):
             async with self._write_lock:
                 self._state_transitions.append(transition)
                 # Enforce max_transitions limit (FIFO removal)
-                if self._max_transitions > 0 and len(self._state_transitions) > self._max_transitions:
+                if (
+                    self._max_transitions > 0
+                    and len(self._state_transitions) > self._max_transitions
+                ):
                     # Remove oldest transition (first in list)
                     self._state_transitions.pop(0)
         except Exception as e:
@@ -401,7 +404,7 @@ class InMemoryStateStore(StateStore):
 
             # Apply pagination
             if query.offset is not None:
-                results = results[query.offset:]
+                results = results[query.offset :]
             if query.limit is not None:
                 results = results[: query.limit]
 
@@ -437,7 +440,9 @@ class InMemoryStateStore(StateStore):
             return False
         if query.timestamp_from is not None and decision.decision_timestamp < query.timestamp_from:
             return False
-        return not (query.timestamp_to is not None and decision.decision_timestamp > query.timestamp_to)
+        return not (
+            query.timestamp_to is not None and decision.decision_timestamp > query.timestamp_to
+        )
 
     def _matches_transition_filters(self, transition: StateTransition, query: StateQuery) -> bool:
         """Check if StateTransition matches query filters."""
@@ -445,7 +450,11 @@ class InMemoryStateStore(StateStore):
             return False
         if query.state is not None and transition.to_state != query.state:
             return False
-        if query.timestamp_from is not None and transition.transition_timestamp < query.timestamp_from:
+        if (
+            query.timestamp_from is not None
+            and transition.transition_timestamp < query.timestamp_from
+        ):
             return False
-        return not (query.timestamp_to is not None and transition.transition_timestamp > query.timestamp_to)
-
+        return not (
+            query.timestamp_to is not None and transition.transition_timestamp > query.timestamp_to
+        )

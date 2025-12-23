@@ -26,7 +26,9 @@ async def mongodb_database():
         client = AsyncIOMotorClient(mongodb_url, serverSelectionTimeoutMS=2000)
         await client.admin.command("ping")
     except Exception:
-        pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
+        pytest.skip(
+            "MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL"
+        )
 
     client = AsyncIOMotorClient(mongodb_url)
     database = client["test_apikeyrouter_audit"]
@@ -198,7 +200,11 @@ async def test_time_range_queries_for_routing_decisions(mongo_store: MongoStateS
     for result in results:
         if isinstance(result, RoutingDecision):
             # Use timedelta tolerance for microsecond precision differences
-            assert (two_hours_ago - timedelta(seconds=1)) <= result.decision_timestamp <= (now + timedelta(seconds=1))
+            assert (
+                (two_hours_ago - timedelta(seconds=1))
+                <= result.decision_timestamp
+                <= (now + timedelta(seconds=1))
+            )
 
 
 @pytest.mark.asyncio
@@ -235,7 +241,11 @@ async def test_time_range_queries_for_state_transitions(mongo_store: MongoStateS
     for result in results:
         if isinstance(result, StateTransition):
             # Use timedelta tolerance for microsecond precision differences
-            assert (two_hours_ago - timedelta(seconds=1)) <= result.transition_timestamp <= (now + timedelta(seconds=1))
+            assert (
+                (two_hours_ago - timedelta(seconds=1))
+                <= result.transition_timestamp
+                <= (now + timedelta(seconds=1))
+            )
 
 
 @pytest.mark.asyncio
@@ -260,9 +270,7 @@ async def test_query_routing_decisions_by_provider(mongo_store: MongoStateStore)
         await mongo_store.save_routing_decision(decision)
 
     # Act - query by provider
-    query = StateQuery(
-        entity_type="RoutingDecision", provider_id="openai"
-    )
+    query = StateQuery(entity_type="RoutingDecision", provider_id="openai")
     results = await mongo_store.query_state(query)
 
     # Assert
@@ -292,9 +300,7 @@ async def test_query_state_transitions_by_state(mongo_store: MongoStateStore):
         await mongo_store.save_state_transition(transition)
 
     # Act - query by to_state
-    query = StateQuery(
-        entity_type="StateTransition", state="throttled"
-    )
+    query = StateQuery(entity_type="StateTransition", state="throttled")
     results = await mongo_store.query_state(query)
 
     # Assert
@@ -491,4 +497,3 @@ async def test_pagination_for_routing_decisions(mongo_store: MongoStateStore):
     page1_ids = {r.id for r in page1 if isinstance(r, RoutingDecision)}
     page2_ids = {r.id for r in page2 if isinstance(r, RoutingDecision)}
     assert page1_ids.isdisjoint(page2_ids)  # No overlap
-

@@ -20,7 +20,12 @@ def get_cors_origins() -> list[str]:
         return [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
 
     # Default: allow localhost for development
-    return ["http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:3000", "http://127.0.0.1:8000"]
+    return [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ]
 
 
 class CORSMiddleware(BaseHTTPMiddleware):
@@ -67,8 +72,12 @@ class CORSMiddleware(BaseHTTPMiddleware):
             response = Response()
             if origin and self._is_origin_allowed(origin):
                 response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-API-Key"
+                response.headers[
+                    "Access-Control-Allow-Methods"
+                ] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                response.headers[
+                    "Access-Control-Allow-Headers"
+                ] = "Content-Type, Authorization, X-API-Key"
                 response.headers["Access-Control-Max-Age"] = "3600"
             return response
 
@@ -82,4 +91,3 @@ class CORSMiddleware(BaseHTTPMiddleware):
             response.headers["Access-Control-Expose-Headers"] = "Content-Type, X-Request-ID"
 
         return response
-
