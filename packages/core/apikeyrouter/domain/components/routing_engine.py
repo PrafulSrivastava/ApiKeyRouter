@@ -254,7 +254,9 @@ class RoutingEngine:
 
         # Score = 1.0 - normalized_cost (so lower cost = higher score)
         for i, key in enumerate(keys):
-            normalized_cost = (fallback_costs[i] - fallback_min_cost) / (fallback_max_cost - fallback_min_cost)
+            normalized_cost = (fallback_costs[i] - fallback_min_cost) / (
+                fallback_max_cost - fallback_min_cost
+            )
             fallback_scores[key.id] = 1.0 - normalized_cost
 
         return fallback_scores
@@ -1481,6 +1483,7 @@ class RoutingEngine:
         # Evaluation Results Section
         if decision.evaluation_results:
             lines.append("EVALUATION RESULTS:")
+
             # Sort by score (descending)
             def get_score(item: tuple[str, dict[str, Any]]) -> float:
                 result_dict = item[1]
