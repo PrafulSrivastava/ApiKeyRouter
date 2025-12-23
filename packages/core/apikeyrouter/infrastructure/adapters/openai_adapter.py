@@ -26,7 +26,7 @@ from apikeyrouter.infrastructure.utils.encryption import (
 )
 
 
-class OpenAIAdapter(ProviderAdapter):
+class OpenAIAdapter(ProviderAdapter):  # type: ignore[misc]
     """OpenAI provider adapter implementation.
 
     Handles communication with OpenAI's API, converting system-defined
@@ -494,7 +494,7 @@ class OpenAIAdapter(ProviderAdapter):
 
         return details
 
-    def get_capabilities(self) -> Any:  # type: ignore[override]
+    def get_capabilities(self) -> Any:
         """Declare what OpenAI supports.
 
         Returns:

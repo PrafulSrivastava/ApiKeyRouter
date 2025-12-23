@@ -61,6 +61,9 @@ class ApiKeyRouter:
         ```
     """
 
+    _state_store: StateStore
+    _observability_manager: ObservabilityManager
+
     def __init__(
         self,
         state_store: StateStore | None = None,

@@ -195,31 +195,32 @@ class RoutingEngine:
                 return {key.id: 1.0 for key in keys}
 
             # Normalize: lower cost = higher score
-            max_cost = max(costs) if costs else Decimal("1.0")
-            min_cost = min(costs) if costs else Decimal("0.0")
+            cost_max = max(costs) if costs else Decimal("1.0")
+            cost_min = min(costs) if costs else Decimal("0.0")
 
-            if max_cost == min_cost:
+            if cost_max == cost_min:
                 # All costs equal, return equal scores
                 return {key.id: 1.0 for key in keys}
 
             # Score = 1.0 - normalized_cost (so lower cost = higher score)
             for i, key in enumerate(keys):
-                normalized_cost = float((costs[i] - min_cost) / (max_cost - min_cost))
+                normalized_cost = float((costs[i] - cost_min) / (cost_max - cost_min))
                 scores[key.id] = 1.0 - normalized_cost
 
             return scores
 
         # Fallback to CostOptimizedStrategy if request_intent is available
         if request_intent is not None:
-            return await self._cost_strategy.score_keys(
+            result = await self._cost_strategy.score_keys(
                 eligible_keys=keys,
                 request_intent=request_intent,
                 providers=self._providers if self._providers else None,
             )
+            return result  # type: ignore[no-any-return]
 
         # Fallback to metadata-based scoring (backward compatibility)
-        scores: dict[str, float] = {}
-        costs: list[float] = []
+        fallback_scores: dict[str, float] = {}
+        fallback_costs: list[float] = []
 
         # Extract costs from metadata
         for key in keys:
@@ -236,27 +237,27 @@ class RoutingEngine:
                 except (ValueError, TypeError):
                     cost = 0.01  # Default if invalid
 
-            costs.append(cost)
+            fallback_costs.append(cost)
 
-        if not costs:
+        if not fallback_costs:
             # No costs available, return equal scores
             return {key.id: 1.0 for key in keys}
 
         # Normalize: lower cost = higher score
         # Invert costs so lower cost gets higher score
-        max_cost = max(costs) if costs else 1.0
-        min_cost = min(costs) if costs else 0.0
+        fallback_max_cost: float = max(fallback_costs) if fallback_costs else 1.0
+        fallback_min_cost: float = min(fallback_costs) if fallback_costs else 0.0
 
-        if max_cost == min_cost:
+        if fallback_max_cost == fallback_min_cost:
             # All costs equal, return equal scores
             return {key.id: 1.0 for key in keys}
 
         # Score = 1.0 - normalized_cost (so lower cost = higher score)
         for i, key in enumerate(keys):
-            normalized_cost = (costs[i] - min_cost) / (max_cost - min_cost)
-            scores[key.id] = 1.0 - normalized_cost
+            normalized_cost = (fallback_costs[i] - fallback_min_cost) / (fallback_max_cost - fallback_min_cost)
+            fallback_scores[key.id] = 1.0 - normalized_cost
 
-        return scores
+        return fallback_scores
 
     async def _score_by_reliability(
         self, keys: list[APIKey], request_intent: RequestIntent | None = None
@@ -274,11 +275,12 @@ class RoutingEngine:
             Dictionary mapping key_id to score (higher is better).
         """
         # Use ReliabilityOptimizedStrategy
-        return await self._reliability_strategy.score_keys(
+        result = await self._reliability_strategy.score_keys(
             eligible_keys=keys,
             request_intent=request_intent,
             providers=self._providers if self._providers else None,
         )
+        return result  # type: ignore[no-any-return]
 
     async def _filter_by_budget(
         self,
@@ -452,11 +454,12 @@ class RoutingEngine:
                     from apikeyrouter.domain.models.budget import EnforcementMode
 
                     has_soft_enforcement = False
-                    for budget_id in violated_budgets:
-                        budget = await self._cost_controller.get_budget(budget_id)
-                        if budget and budget.enforcement_mode == EnforcementMode.Soft:
-                            has_soft_enforcement = True
-                            break
+                    if self._cost_controller:
+                        for budget_id in violated_budgets:
+                            budget = await self._cost_controller.get_budget(budget_id)
+                            if budget and budget.enforcement_mode == EnforcementMode.Soft:
+                                has_soft_enforcement = True
+                                break
 
                     if has_soft_enforcement and self._cost_controller:
                         # Soft enforcement - penalize score by 30%
@@ -538,7 +541,7 @@ class RoutingEngine:
         """
         # For cost objective, use strategy's explanation if cost estimate is available
         if objective.primary.lower() == ObjectiveType.Cost.value and cost_estimate is not None:
-            explanation = self._cost_strategy.generate_explanation(
+            explanation: str = self._cost_strategy.generate_explanation(
                 selected_key_id=selected_key.id,
                 cost_estimate=cost_estimate,
                 quota_state=quota_state,
@@ -571,7 +574,7 @@ class RoutingEngine:
             # Calculate success rate for explanation
             total_requests = selected_key.usage_count + selected_key.failure_count
             success_rate = selected_key.usage_count / total_requests if total_requests > 0 else 0.95
-            explanation = self._reliability_strategy.generate_explanation(
+            reliability_explanation: str = self._reliability_strategy.generate_explanation(
                 selected_key_id=selected_key.id,
                 success_rate=success_rate,
                 quota_state=quota_state,
@@ -783,11 +786,12 @@ class RoutingEngine:
             Dictionary mapping key_id to score (higher is better).
         """
         # Use FairnessStrategy
-        return await self._fairness_strategy.score_keys(
+        result = await self._fairness_strategy.score_keys(
             eligible_keys=keys,
             request_intent=request_intent,
             providers=self._providers if self._providers else None,
         )
+        return result  # type: ignore[no-any-return]
 
     def _normalize_weights(self, weights: dict[str, float]) -> dict[str, float]:
         """Normalize weights to sum to 1.0.
@@ -1214,7 +1218,7 @@ class RoutingEngine:
             self._last_key_indices[provider_id] = selected_index
         else:
             # Single best key or not fairness objective - select highest score
-            selected_key_id = max(scores, key=scores.get)
+            selected_key_id = max(scores, key=lambda k: scores[k])
             selected_key = next(k for k in eligible_keys if k.id == selected_key_id)
             # Update last used index for potential future round-robin
             selected_index = eligible_keys.index(selected_key)
@@ -1309,9 +1313,9 @@ class RoutingEngine:
         )
 
         # Create evaluation results with scores, quota states, and cost information
-        evaluation_results = {}
+        evaluation_results: dict[str, dict[str, Any]] = {}
         for key_id, score in scores.items():
-            result = {"score": score}
+            result: dict[str, Any] = {"score": score}
             if quota_states and key_id in quota_states:
                 result["quota_state"] = quota_states[key_id].capacity_state.value
 
@@ -1478,13 +1482,16 @@ class RoutingEngine:
         if decision.evaluation_results:
             lines.append("EVALUATION RESULTS:")
             # Sort by score (descending)
+            def get_score(item: tuple[str, dict[str, Any]]) -> float:
+                result_dict = item[1]
+                if isinstance(result_dict, dict):
+                    score = result_dict.get("score")
+                    return float(score) if score is not None else 0.0
+                return 0.0
+
             sorted_results = sorted(
                 decision.evaluation_results.items(),
-                key=lambda x: (
-                    x[1].get("score")
-                    if isinstance(x[1], dict) and x[1].get("score") is not None
-                    else 0.0
-                ),
+                key=get_score,
                 reverse=True,
             )
 

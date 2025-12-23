@@ -1,6 +1,7 @@
 """Security headers middleware for API responses."""
 
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,7 +18,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - Strict-Transport-Security: max-age=31536000 (HTTPS only, added conditionally)
     """
 
-    def __init__(self, app: Callable, enable_hsts: bool = False) -> None:
+    def __init__(self, app: Callable[..., Any], enable_hsts: bool = False) -> None:
         """Initialize security headers middleware.
 
         Args:
@@ -28,7 +29,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._enable_hsts = enable_hsts
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Process request and add security headers to response.
 
         Args:
@@ -49,4 +50,4 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if self._enable_hsts and request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        return response
+        return response  # type: ignore[no-any-return]

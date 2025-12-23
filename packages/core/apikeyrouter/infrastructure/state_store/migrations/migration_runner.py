@@ -1,5 +1,7 @@
 """Migration runner for MongoDB schema changes."""
 
+from typing import Any
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from apikeyrouter.infrastructure.state_store.migrations.v1_initial_schema import (
@@ -10,7 +12,7 @@ from apikeyrouter.infrastructure.state_store.migrations.v1_initial_schema import
 CURRENT_SCHEMA_VERSION = 1
 
 
-async def run_migrations(database: AsyncIOMotorDatabase) -> None:
+async def run_migrations(database: AsyncIOMotorDatabase[Any]) -> None:
     """Run all pending migrations.
 
     Checks the current schema version and runs any migrations that haven't

@@ -262,7 +262,7 @@ class KeyManager:
         if new_state == KeyState.Throttled:
             cooldown_duration = cooldown_seconds or self._default_cooldown_seconds
             key.cooldown_until = now + timedelta(seconds=cooldown_duration)
-        elif new_state != KeyState.Throttled:
+        else:
             # Clear cooldown if transitioning away from Throttled
             key.cooldown_until = None
 
@@ -397,7 +397,7 @@ class KeyManager:
         if key.state == KeyState.Throttled:
             if key.cooldown_until is None:
                 return True  # No cooldown set, consider eligible
-            return now >= key.cooldown_until
+            return bool(now >= key.cooldown_until)
 
         # Recovering keys are eligible
         if key.state == KeyState.Recovering:
@@ -405,7 +405,7 @@ class KeyManager:
 
         # Available keys are always eligible
         # Unknown state - default to not eligible
-        return key.state == KeyState.Available
+        return bool(key.state == KeyState.Available)
 
     async def get_eligible_keys(
         self,
@@ -671,7 +671,7 @@ class KeyManager:
                     context={"key_id": key_id},
                 )
 
-            return decrypted_material
+            return str(decrypted_material)
         except EncryptionError as e:
             # Log failed access attempt
             from contextlib import suppress

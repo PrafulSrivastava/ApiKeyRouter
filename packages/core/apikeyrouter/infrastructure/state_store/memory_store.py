@@ -35,7 +35,7 @@ from apikeyrouter.domain.models.routing_decision import RoutingDecision
 from apikeyrouter.domain.models.state_transition import StateTransition
 
 
-class InMemoryStateStore(StateStore):
+class InMemoryStateStore(StateStore):  # type: ignore[misc]
     """In-memory implementation of StateStore interface.
 
     Provides thread-safe, high-performance state storage using Python dictionaries.

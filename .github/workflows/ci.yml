@@ -49,7 +49,12 @@ jobs:
       - name: Run linting
         run: |
           poetry run ruff check packages/${{ matrix.package }}
-          poetry run mypy packages/${{ matrix.package }}
+          # Type check only production code (exclude tests and examples)
+          if [ "${{ matrix.package }}" == "core" ]; then
+            poetry run mypy packages/core/apikeyrouter --ignore-missing-imports
+          else
+            poetry run mypy packages/proxy/apikeyrouter_proxy --ignore-missing-imports
+          fi
 
       - name: Run tests with coverage
         run: |

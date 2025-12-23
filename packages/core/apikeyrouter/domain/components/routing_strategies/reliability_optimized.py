@@ -43,7 +43,7 @@ class ReliabilityOptimizedStrategy:
         total_requests = key.usage_count + key.failure_count
         if total_requests > 0:
             # Success rate = successful requests / total requests
-            success_rate = key.usage_count / total_requests
+            success_rate = float(key.usage_count) / float(total_requests)
             return max(0.0, min(1.0, success_rate))
         else:
             # No usage history - default to high reliability (neutral)
@@ -142,8 +142,8 @@ class ReliabilityOptimizedStrategy:
             quota_states = {}
             for key in eligible_keys:
                 try:
-                    quota_state = await self._quota_engine.get_quota_state(key.id)
-                    quota_states[key.id] = quota_state
+                    key_quota_state = await self._quota_engine.get_quota_state(key.id)
+                    quota_states[key.id] = key_quota_state
                 except Exception as e:
                     # Log but continue without quota state for this key
                     await self._observability.log(
@@ -162,7 +162,7 @@ class ReliabilityOptimizedStrategy:
             health_score = self._get_health_score(key, providers) * 0.20
 
             # Get quota state score (10% weight)
-            quota_state = quota_states.get(key.id) if quota_states else None
+            quota_state: QuotaState | None = quota_states.get(key.id) if quota_states else None
             quota_score = self._get_quota_state_score(quota_state) * 0.10
 
             # Combine scores

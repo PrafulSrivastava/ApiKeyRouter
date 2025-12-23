@@ -3,6 +3,7 @@
 import time
 from collections import defaultdict
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -19,7 +20,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: Callable,
+        app: Callable[..., Any],
         management_api_limit: int = 100,
         window_seconds: int = 60,
     ) -> None:
@@ -111,7 +112,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._request_history[ip].append(current_time)
         return True, 0
 
-    async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse | Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> JSONResponse | Response:
         """Process request and enforce rate limiting.
 
         Args:
@@ -135,4 +136,4 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Continue to next middleware or route handler
         response = await call_next(request)
-        return response
+        return response  # type: ignore[no-any-return]

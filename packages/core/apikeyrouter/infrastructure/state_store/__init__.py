@@ -7,6 +7,6 @@ try:
     from apikeyrouter.infrastructure.state_store.mongo_store import MongoStateStore
 except ImportError:
     # motor/beanie not installed - MongoStateStore unavailable
-    MongoStateStore = None  # type: ignore[assignment, misc]
+    MongoStateStore = None
 
 __all__ = ["InMemoryStateStore", "MongoStateStore"]

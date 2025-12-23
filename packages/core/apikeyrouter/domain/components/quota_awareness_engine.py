@@ -1078,9 +1078,9 @@ class QuotaAwarenessEngine:
         confidence *= capacity_confidence
 
         # Ensure confidence is within bounds
-        confidence = max(0.0, min(1.0, confidence))
+        confidence_value: float = max(0.0, min(1.0, confidence))
 
-        return confidence
+        return confidence_value
 
     def calculate_uncertainty(
         self, quota_state: QuotaState, usage_rate: UsageRate | None
@@ -1185,23 +1185,23 @@ class QuotaAwarenessEngine:
 
         # Check cache
         if key_id in self._prediction_cache:
-            prediction, cached_at = self._prediction_cache[key_id]
+            cached_prediction, cached_at = self._prediction_cache[key_id]
             age_seconds = (now - cached_at).total_seconds()
 
             # Return cached prediction if not expired
             if age_seconds < self._prediction_cache_ttl_seconds:
-                return prediction
+                return cached_prediction
 
             # Cache expired, remove it
             del self._prediction_cache[key_id]
 
         # Calculate new prediction
         try:
-            prediction = await self.predict_exhaustion(key_id)
-            if prediction is not None:
+            new_prediction: ExhaustionPrediction | None = await self.predict_exhaustion(key_id)
+            if new_prediction is not None:
                 # Cache the prediction
-                self._prediction_cache[key_id] = (prediction, now)
-            return prediction
+                self._prediction_cache[key_id] = (new_prediction, now)
+            return new_prediction
         except Exception as e:
             # Log error but don't fail capacity update
             await self._observability.log(

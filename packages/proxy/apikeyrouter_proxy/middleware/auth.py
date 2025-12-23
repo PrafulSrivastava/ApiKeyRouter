@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Header, HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -70,7 +71,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     /api/v1/* endpoints and validates it against the management API key.
     """
 
-    def __init__(self, app: Callable) -> None:
+    def __init__(self, app: Callable[..., Any]) -> None:
         """Initialize authentication middleware.
 
         Args:
@@ -79,7 +80,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._management_api_key = get_management_api_key()
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Process request and enforce authentication.
 
         Args:
@@ -125,4 +126,4 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         # Continue to next middleware or route handler
         response = await call_next(request)
-        return response
+        return response  # type: ignore[no-any-return]

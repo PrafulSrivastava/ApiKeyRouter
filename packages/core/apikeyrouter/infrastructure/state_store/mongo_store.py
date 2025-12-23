@@ -60,7 +60,7 @@ from apikeyrouter.infrastructure.state_store.mongo_models import (
 logger = structlog.get_logger(__name__)
 
 
-class MongoStateStore(StateStore):
+class MongoStateStore(StateStore):  # type: ignore[misc]
     """MongoDB implementation of StateStore interface.
 
     Provides persistent state storage using MongoDB with motor (async driver)
@@ -122,7 +122,7 @@ class MongoStateStore(StateStore):
         # Parse connection string and configure client
         try:
             # Create motor client with connection pooling configuration
-            self._client: AsyncIOMotorClient | None = AsyncIOMotorClient(
+            self._client: AsyncIOMotorClient[Any] | None = AsyncIOMotorClient(
                 connection_url,
                 maxPoolSize=max_pool_size,
                 minPoolSize=min_pool_size,
@@ -455,7 +455,9 @@ class MongoStateStore(StateStore):
 
         try:
             results: list[Any] = []
-            self._client[self._database_name]
+            if self._client is None:
+                raise StateStoreError("MongoDB client not initialized")
+            _ = self._client[self._database_name]
 
             # Build MongoDB query filter
             mongo_filter: dict[str, Any] = {}
@@ -466,21 +468,21 @@ class MongoStateStore(StateStore):
             if query.state is not None:
                 mongo_filter["state"] = query.state
             if query.timestamp_from is not None or query.timestamp_to is not None:
-                timestamp_filter: dict[str, Any] = {}
+                mongo_timestamp_filter: dict[str, Any] = {}
                 if query.timestamp_from is not None:
-                    timestamp_filter["$gte"] = query.timestamp_from
+                    mongo_timestamp_filter["$gte"] = query.timestamp_from
                 if query.timestamp_to is not None:
-                    timestamp_filter["$lte"] = query.timestamp_to
-                if timestamp_filter:
+                    mongo_timestamp_filter["$lte"] = query.timestamp_to
+                if mongo_timestamp_filter:
                     # Determine timestamp field based on entity type
                     if query.entity_type == "APIKey":
-                        mongo_filter["created_at"] = timestamp_filter
+                        mongo_filter["created_at"] = mongo_timestamp_filter
                     elif query.entity_type == "QuotaState":
-                        mongo_filter["updated_at"] = timestamp_filter
+                        mongo_filter["updated_at"] = mongo_timestamp_filter
                     elif query.entity_type == "RoutingDecision":
-                        mongo_filter["decision_timestamp"] = timestamp_filter
+                        mongo_filter["decision_timestamp"] = mongo_timestamp_filter
                     elif query.entity_type == "StateTransition":
-                        mongo_filter["transition_timestamp"] = timestamp_filter
+                        mongo_filter["transition_timestamp"] = mongo_timestamp_filter
 
             # Query based on entity type
             if query.entity_type == "APIKey" or query.entity_type is None:
@@ -494,13 +496,13 @@ class MongoStateStore(StateStore):
                     key_filter["state"] = query.state
                 # For timestamp queries, use created_at field
                 if query.timestamp_from is not None or query.timestamp_to is not None:
-                    timestamp_filter: dict[str, Any] = {}
+                    key_timestamp_filter: dict[str, Any] = {}
                     if query.timestamp_from is not None:
-                        timestamp_filter["$gte"] = query.timestamp_from
+                        key_timestamp_filter["$gte"] = query.timestamp_from
                     if query.timestamp_to is not None:
-                        timestamp_filter["$lte"] = query.timestamp_to
-                    if timestamp_filter:
-                        key_filter["created_at"] = timestamp_filter
+                        key_timestamp_filter["$lte"] = query.timestamp_to
+                    if key_timestamp_filter:
+                        key_filter["created_at"] = key_timestamp_filter
 
                 # Build Beanie query
                 # Beanie find() accepts a dict, but we need to use the correct field names
@@ -560,13 +562,13 @@ class MongoStateStore(StateStore):
                     decision_filter["selected_provider_id"] = query.provider_id
                 # For time-range queries, use decision_timestamp field
                 if query.timestamp_from is not None or query.timestamp_to is not None:
-                    timestamp_filter: dict[str, Any] = {}
+                    decision_timestamp_filter: dict[str, Any] = {}
                     if query.timestamp_from is not None:
-                        timestamp_filter["$gte"] = query.timestamp_from
+                        decision_timestamp_filter["$gte"] = query.timestamp_from
                     if query.timestamp_to is not None:
-                        timestamp_filter["$lte"] = query.timestamp_to
-                    if timestamp_filter:
-                        decision_filter["decision_timestamp"] = timestamp_filter
+                        decision_timestamp_filter["$lte"] = query.timestamp_to
+                    if decision_timestamp_filter:
+                        decision_filter["decision_timestamp"] = decision_timestamp_filter
 
                 # Build Beanie query
                 beanie_query = RoutingDecisionDocument.find(decision_filter)
@@ -589,13 +591,13 @@ class MongoStateStore(StateStore):
                     transition_filter["to_state"] = query.state
                 # For time-range queries, use transition_timestamp field
                 if query.timestamp_from is not None or query.timestamp_to is not None:
-                    timestamp_filter: dict[str, Any] = {}
+                    transition_timestamp_filter: dict[str, Any] = {}
                     if query.timestamp_from is not None:
-                        timestamp_filter["$gte"] = query.timestamp_from
+                        transition_timestamp_filter["$gte"] = query.timestamp_from
                     if query.timestamp_to is not None:
-                        timestamp_filter["$lte"] = query.timestamp_to
-                    if timestamp_filter:
-                        transition_filter["transition_timestamp"] = timestamp_filter
+                        transition_timestamp_filter["$lte"] = query.timestamp_to
+                    if transition_timestamp_filter:
+                        transition_filter["transition_timestamp"] = transition_timestamp_filter
 
                 # Build Beanie query
                 beanie_query = StateTransitionDocument.find(transition_filter)

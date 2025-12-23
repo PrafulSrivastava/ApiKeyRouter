@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -34,7 +35,7 @@ class CORSMiddleware(BaseHTTPMiddleware):
     Allows requests from configured origins and handles preflight requests.
     """
 
-    def __init__(self, app: Callable, allowed_origins: list[str] | None = None) -> None:
+    def __init__(self, app: Callable[..., Any], allowed_origins: list[str] | None = None) -> None:
         """Initialize CORS middleware.
 
         Args:
@@ -55,7 +56,7 @@ class CORSMiddleware(BaseHTTPMiddleware):
         """
         return origin in self._allowed_origins or "*" in self._allowed_origins
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         """Process request and handle CORS.
 
         Args:
@@ -90,4 +91,4 @@ class CORSMiddleware(BaseHTTPMiddleware):
             response.headers["Access-Control-Allow-Credentials"] = "true"
             response.headers["Access-Control-Expose-Headers"] = "Content-Type, X-Request-ID"
 
-        return response
+        return response  # type: ignore[no-any-return]

@@ -1075,7 +1075,7 @@ class CostController:
         self,
         provider_id: str | None = None,
         model: str | None = None,
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Get reconciliation statistics for analysis.
 
         Calculates statistics like average error, error distribution, etc.

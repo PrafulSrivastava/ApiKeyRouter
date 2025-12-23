@@ -200,4 +200,5 @@ class RequestIntent(BaseModel):
         Returns:
             Stream value (defaults to False if not set).
         """
-        return self.parameters.get("stream", False)
+        value = self.parameters.get("stream", False)
+        return bool(value) if value is not None else False

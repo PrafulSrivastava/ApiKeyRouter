@@ -4,6 +4,8 @@ This migration sets up the initial schema with all indexes and optional
 TTL indexes for automatic cleanup of old audit trail data.
 """
 
+from typing import Any
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from apikeyrouter.infrastructure.state_store.mongo_models import (
@@ -14,7 +16,7 @@ from apikeyrouter.infrastructure.state_store.mongo_models import (
 )
 
 
-async def migrate_v1_initial_schema(database: AsyncIOMotorDatabase) -> None:
+async def migrate_v1_initial_schema(database: AsyncIOMotorDatabase[Any]) -> None:
     """Create initial schema with indexes.
 
     This migration:

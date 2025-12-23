@@ -45,7 +45,6 @@ class TokenUsage(BaseModel):
     )
 
     @computed_field
-    @property
     def total_tokens(self) -> int:
         """Compute total tokens (input + output)."""
         return self.input_tokens + self.output_tokens

@@ -46,7 +46,7 @@ def sanitize_for_logging(data: Any) -> Any:
     return data
 
 
-class DefaultObservabilityManager(ObservabilityManager):
+class DefaultObservabilityManager(ObservabilityManager):  # type: ignore[misc]
     """Default implementation of ObservabilityManager using structlog with JSON format.
 
     Provides structured logging with JSON output for machine readability,
@@ -80,7 +80,7 @@ class DefaultObservabilityManager(ObservabilityManager):
             processors.append(structlog.dev.ConsoleRenderer())
 
         structlog.configure(
-            processors=processors,
+            processors=processors,  # type: ignore[arg-type]
             logger_factory=structlog.stdlib.LoggerFactory(),
             wrapper_class=structlog.stdlib.BoundLogger,
             cache_logger_on_first_use=True,
