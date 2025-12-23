@@ -1,9 +1,15 @@
 """Integration tests for key registration and state management."""
 
+from datetime import datetime
+from decimal import Decimal
 
 import pytest
 
+from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
 from apikeyrouter.domain.models.api_key import KeyState
+from apikeyrouter.domain.models.cost_estimate import CostEstimate
+from apikeyrouter.domain.models.request_intent import RequestIntent
+from apikeyrouter.domain.models.system_response import ResponseMetadata, SystemResponse, TokenUsage
 from apikeyrouter.infrastructure.state_store.memory_store import InMemoryStateStore
 from apikeyrouter.router import ApiKeyRouter
 
@@ -15,6 +21,73 @@ async def api_key_router():
     return ApiKeyRouter(state_store=state_store)
 
 
+class MockProviderAdapter(ProviderAdapter):
+    """Mock ProviderAdapter for integration testing."""
+
+    def __init__(self, provider_id: str = "openai") -> None:
+        """Initialize mock adapter."""
+        self.provider_id = provider_id
+
+    async def execute_request(self, intent: RequestIntent, key):
+        """Execute request - mock implementation."""
+        return SystemResponse(
+            content="Mocked response content",
+            request_id="mock-request-id",
+            key_used=key.id,
+            metadata=ResponseMetadata(
+                model_used=intent.model if hasattr(intent, "model") else "mock-model",
+                tokens_used=TokenUsage(input_tokens=10, output_tokens=5),
+                response_time_ms=100,
+                provider_id=key.provider_id,
+                timestamp=datetime.utcnow(),
+            ),
+            cost=CostEstimate(
+                amount=Decimal("0.001"),
+                currency="USD",
+                confidence=0.9,
+                estimation_method="mock",
+                input_tokens_estimate=10,
+                output_tokens_estimate=5,
+            ),
+        )
+
+    def normalize_response(self, provider_response):
+        """Normalize response - mock implementation."""
+        return provider_response
+
+    def map_error(self, provider_error: Exception):
+        """Map error - mock implementation."""
+        return provider_error
+
+    async def estimate_cost(self, intent: RequestIntent):
+        """Estimate cost - mock implementation."""
+        return CostEstimate(
+            amount=Decimal("0.001"),
+            currency="USD",
+            confidence=0.9,
+            estimation_method="mock",
+            input_tokens_estimate=10,
+            output_tokens_estimate=5,
+        )
+
+    async def get_capabilities(self):
+        """Get capabilities - mock implementation."""
+        from apikeyrouter.domain.models.provider_capabilities import ProviderCapabilities
+
+        return ProviderCapabilities(
+            supported_models=["mock-model"],
+            supports_streaming=True,
+            supports_function_calling=False,
+            max_tokens=4096,
+        )
+
+    async def get_health(self):
+        """Get health - mock implementation."""
+        from apikeyrouter.domain.models.health_state import HealthState
+
+        return HealthState(status="healthy", message="Mock adapter is healthy")
+
+
 class TestKeyRegistrationAndStateManagement:
     """Tests for key registration and state management workflow."""
 
@@ -22,7 +95,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_key_registration_workflow(self, api_key_router):
         """Test key registration workflow."""
         # Register provider first
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
@@ -50,7 +122,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_key_state_management_workflow(self, api_key_router):
         """Test key state management workflow."""
         # Register provider and key
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
@@ -89,7 +160,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_key_revocation_workflow(self, api_key_router):
         """Test key revocation workflow."""
         # Register provider and key
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
@@ -119,7 +189,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_key_rotation_workflow(self, api_key_router):
         """Test key rotation workflow."""
         # Register provider and key
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
@@ -163,7 +232,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_multiple_keys_same_provider(self, api_key_router):
         """Test registering multiple keys for same provider."""
         # Register provider
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
@@ -196,7 +264,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_key_usage_statistics_tracking(self, api_key_router):
         """Test key usage statistics tracking."""
         # Register provider and key
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
@@ -228,7 +295,6 @@ class TestKeyRegistrationAndStateManagement:
     async def test_key_cooldown_management(self, api_key_router):
         """Test key cooldown management."""
         # Register provider and key
-        from tests.integration.test_routing_flow import MockProviderAdapter
 
         adapter = MockProviderAdapter(provider_id="openai")
         await api_key_router.register_provider("openai", adapter)
