@@ -300,7 +300,7 @@ class MongoStateStore(StateStore):
                 docs = await APIKeyDocument.find_all().to_list()
             else:
                 docs = await APIKeyDocument.find(APIKeyDocument.provider_id == provider_id).to_list()
-            
+
             # Convert documents to domain models
             keys = [doc.to_domain_model() for doc in docs]
             return keys
@@ -459,7 +459,7 @@ class MongoStateStore(StateStore):
 
         try:
             results: list[Any] = []
-            db = self._client[self._database_name]
+            self._client[self._database_name]
 
             # Build MongoDB query filter
             mongo_filter: dict[str, Any] = {}

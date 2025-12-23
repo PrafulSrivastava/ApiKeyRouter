@@ -1,6 +1,5 @@
 """Integration tests for key registration and state management."""
 
-from datetime import datetime, timedelta
 
 import pytest
 
@@ -208,7 +207,6 @@ class TestKeyRegistrationAndStateManagement:
         # Get initial statistics
         initial_key = await api_key_router.key_manager.get_key(key.id)
         initial_usage = initial_key.usage_count if initial_key else 0
-        initial_failures = initial_key.failure_count if initial_key else 0
 
         # Make a request
         from apikeyrouter.domain.models.request_intent import Message, RequestIntent
@@ -218,7 +216,7 @@ class TestKeyRegistrationAndStateManagement:
             messages=[Message(role="user", content="Test")],
             parameters={"provider_id": "openai"},
         )
-        response = await api_key_router.route(request_intent)
+        await api_key_router.route(request_intent)
 
         # Verify usage statistics updated
         updated_key = await api_key_router.key_manager.get_key(key.id)

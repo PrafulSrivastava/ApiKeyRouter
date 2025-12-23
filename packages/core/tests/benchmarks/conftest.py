@@ -1,6 +1,5 @@
 """Pytest configuration for benchmark tests."""
 
-import pytest
 
 
 def pytest_configure(config):

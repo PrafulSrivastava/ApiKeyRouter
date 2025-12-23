@@ -120,7 +120,8 @@ def mock_observability() -> MockObservabilityManager:
 @pytest.fixture
 def mock_quota_engine():
     """Create mock quota awareness engine."""
-    from unittest.mock import AsyncMock
+    from datetime import datetime, timedelta
+
     from apikeyrouter.domain.components.quota_awareness_engine import (
         QuotaAwarenessEngine,
     )
@@ -130,13 +131,12 @@ def mock_quota_engine():
         QuotaState,
         TimeWindow,
     )
-    from datetime import datetime, timedelta
 
     engine = AsyncMock(spec=QuotaAwarenessEngine)
-    
+
     # Default quota states
     engine.quota_states = {}
-    
+
     async def get_quota_state(key_id: str):
         if key_id in engine.quota_states:
             return engine.quota_states[key_id]
@@ -151,7 +151,7 @@ def mock_quota_engine():
             time_window=TimeWindow.Daily,
             reset_at=datetime.utcnow() + timedelta(days=1),
         )
-    
+
     engine.get_quota_state = get_quota_state
     return engine
 
@@ -195,13 +195,14 @@ def routing_engine(
 async def sample_keys(mock_key_manager) -> list[APIKey]:
     """Create sample keys for testing."""
     import os
+
     from cryptography.fernet import Fernet
-    
+
     # Ensure encryption key is set for this fixture
     if not os.getenv("APIKEYROUTER_ENCRYPTION_KEY"):
         test_key = Fernet.generate_key()
         os.environ["APIKEYROUTER_ENCRYPTION_KEY"] = test_key.decode()
-    
+
     keys = []
     for i in range(3):
         key = await mock_key_manager.register_key(
@@ -606,7 +607,7 @@ class TestObjectiveBasedRouting:
     ) -> None:
         """Test that routing selects highest-scoring key for cost objective."""
         # Create keys with different costs
-        key1 = await mock_key_manager.register_key(
+        await mock_key_manager.register_key(
             key_material="sk-test-key-1",
             provider_id="openai",
             metadata={"estimated_cost_per_request": 0.02},
@@ -616,7 +617,7 @@ class TestObjectiveBasedRouting:
             provider_id="openai",
             metadata={"estimated_cost_per_request": 0.01},  # Lower cost
         )
-        key3 = await mock_key_manager.register_key(
+        await mock_key_manager.register_key(
             key_material="sk-test-key-3",
             provider_id="openai",
             metadata={"estimated_cost_per_request": 0.03},
@@ -636,7 +637,7 @@ class TestObjectiveBasedRouting:
         self, routing_engine, mock_key_manager
     ) -> None:
         """Test that explanation includes score for objective-based routing."""
-        key1 = await mock_key_manager.register_key(
+        await mock_key_manager.register_key(
             key_material="sk-test-key-1",
             provider_id="openai",
             metadata={"estimated_cost_per_request": 0.01},
@@ -823,18 +824,18 @@ class TestObjectiveBasedRouting:
     ) -> None:
         """Test that invalid objective raises ValidationError (RoutingObjective validates)."""
         from pydantic import ValidationError
-        
+
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",
             provider_id="openai",
         )
 
         eligible_keys = [key1]
-        
+
         # RoutingObjective now validates primary field, so invalid objective raises ValidationError
         with pytest.raises(ValidationError, match="Primary objective must be one of"):
             objective = RoutingObjective(primary="unknown_objective")
-        
+
         # Test that valid objective works
         objective = RoutingObjective(primary=ObjectiveType.Fairness.value)
         scores = await routing_engine.evaluate_keys(eligible_keys, objective)
@@ -852,13 +853,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that exhausted keys are filtered out."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys
         key1 = await mock_key_manager.register_key(
@@ -906,13 +908,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that critical keys are filtered out."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys
         key1 = await mock_key_manager.register_key(
@@ -959,13 +962,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that abundant keys get higher scores (preferred)."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys with same cost (will have same base score)
         key1 = await mock_key_manager.register_key(
@@ -1016,13 +1020,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that constrained keys get lower scores (penalized)."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys with same cost
         key1 = await mock_key_manager.register_key(
@@ -1072,13 +1077,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that quota state is included in explanation."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",
@@ -1110,13 +1116,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that explanation mentions filtered keys."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys
         key1 = await mock_key_manager.register_key(
@@ -1164,13 +1171,14 @@ class TestQuotaAwareRouting:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that routing fails when all keys are exhausted."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys
         key1 = await mock_key_manager.register_key(
@@ -1389,7 +1397,7 @@ class TestMultiObjectiveOptimization:
 
         # evaluation_results should include objective_scores
         assert decision.evaluation_results is not None
-        for key_id, result in decision.evaluation_results.items():
+        for _key_id, result in decision.evaluation_results.items():
             assert "score" in result
             if isinstance(result, dict) and "objective_scores" in result:
                 obj_scores = result["objective_scores"]
@@ -1402,7 +1410,7 @@ class TestMultiObjectiveOptimization:
         """Test that _normalize_weights normalizes weights to sum to 1.0."""
         weights = {"cost": 0.6, "reliability": 0.4}  # Already sums to 1.0
         normalized = routing_engine._normalize_weights(weights)
-        
+
         assert sum(normalized.values()) == pytest.approx(1.0, abs=0.01)
         assert normalized["cost"] == pytest.approx(0.6, abs=0.01)
         assert normalized["reliability"] == pytest.approx(0.4, abs=0.01)
@@ -1414,7 +1422,7 @@ class TestMultiObjectiveOptimization:
         """Test that _normalize_weights normalizes when weights don't sum to 1.0."""
         weights = {"cost": 0.9, "reliability": 0.6}  # Sums to 1.5
         normalized = routing_engine._normalize_weights(weights)
-        
+
         assert sum(normalized.values()) == pytest.approx(1.0, abs=0.01)
         # Should be proportional
         assert normalized["cost"] / normalized["reliability"] == pytest.approx(0.9 / 0.6, abs=0.01)
@@ -1426,7 +1434,7 @@ class TestMultiObjectiveOptimization:
         """Test that _normalize_weights handles zero weights."""
         weights = {"cost": 0.0, "reliability": 0.0}
         normalized = routing_engine._normalize_weights(weights)
-        
+
         # Should return equal weights
         assert sum(normalized.values()) == pytest.approx(1.0, abs=0.01)
         assert normalized["cost"] == pytest.approx(0.5, abs=0.01)
@@ -1508,13 +1516,14 @@ class TestMultiObjectiveOptimization:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that explanation includes quota state."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",
@@ -1548,12 +1557,12 @@ class TestMultiObjectiveOptimization:
     ) -> None:
         """Test that explanation explains why key was chosen."""
         # Create keys with different costs
-        key1 = await mock_key_manager.register_key(
+        await mock_key_manager.register_key(
             key_material="sk-test-key-1",
             provider_id="openai",
             metadata={"estimated_cost_per_request": 0.01},  # Lower cost
         )
-        key2 = await mock_key_manager.register_key(
+        await mock_key_manager.register_key(
             key_material="sk-test-key-2",
             provider_id="openai",
             metadata={"estimated_cost_per_request": 0.02},
@@ -1595,13 +1604,14 @@ class TestMultiObjectiveOptimization:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ) -> None:
         """Test that explanation includes quota filtering information."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         # Create keys
         key1 = await mock_key_manager.register_key(
@@ -1704,7 +1714,6 @@ class TestPolicyIntegration:
     def mock_policy_engine(self, mock_state_store, mock_observability):
         """Create mock policy engine."""
         from apikeyrouter.domain.components.policy_engine import PolicyEngine
-        from unittest.mock import AsyncMock
 
         engine = AsyncMock(spec=PolicyEngine)
         engine.get_applicable_policies = AsyncMock(return_value=[])
@@ -1730,7 +1739,6 @@ class TestPolicyIntegration:
     ):
         """Test that PolicyEngine is queried before routing."""
         from apikeyrouter.domain.models.policy import Policy, PolicyResult, PolicyScope, PolicyType
-        from unittest.mock import AsyncMock
 
         # Create a policy
         policy = Policy(
@@ -1768,7 +1776,7 @@ class TestPolicyIntegration:
         request_intent = {"provider_id": "openai", "request_id": "req_policy"}
         objective = RoutingObjective(primary=ObjectiveType.Cost.value)
 
-        decision = await routing_engine_with_policy.route_request(request_intent, objective)
+        await routing_engine_with_policy.route_request(request_intent, objective)
 
         # Verify PolicyEngine was queried
         assert mock_get_policies.called
@@ -1782,7 +1790,6 @@ class TestPolicyIntegration:
     ):
         """Test that keys are filtered by policy results."""
         from apikeyrouter.domain.models.policy import Policy, PolicyResult, PolicyScope, PolicyType
-        from unittest.mock import AsyncMock
 
         # Create a policy that filters key2
         policy = Policy(
@@ -1833,7 +1840,6 @@ class TestPolicyIntegration:
     ):
         """Test that policy constraints are applied to routing."""
         from apikeyrouter.domain.models.policy import Policy, PolicyResult, PolicyScope, PolicyType
-        from unittest.mock import AsyncMock
 
         # Create a policy with constraints
         policy = Policy(
@@ -1881,7 +1887,6 @@ class TestPolicyIntegration:
     ):
         """Test that policy application is included in explanation."""
         from apikeyrouter.domain.models.policy import Policy, PolicyResult, PolicyScope, PolicyType
-        from unittest.mock import AsyncMock
 
         # Create a policy
         policy = Policy(
@@ -1928,7 +1933,6 @@ class TestPolicyIntegration:
     ):
         """Test that policy rejection raises NoEligibleKeysError."""
         from apikeyrouter.domain.models.policy import Policy, PolicyResult, PolicyScope, PolicyType
-        from unittest.mock import AsyncMock
 
         # Create a policy that rejects routing
         policy = Policy(
@@ -1971,7 +1975,6 @@ class TestPolicyIntegration:
     ):
         """Test that filtering all keys raises NoEligibleKeysError."""
         from apikeyrouter.domain.models.policy import Policy, PolicyResult, PolicyScope, PolicyType
-        from unittest.mock import AsyncMock
 
         # Create a policy that filters all keys
         policy = Policy(
@@ -2066,11 +2069,11 @@ class TestEdgeCases:
         self, routing_engine, mock_key_manager, mock_observability
     ):
         """Test cost scoring with CostController."""
+        from decimal import Decimal
+
         from apikeyrouter.domain.components.cost_controller import CostController
         from apikeyrouter.domain.models.cost_estimate import CostEstimate
         from apikeyrouter.domain.models.request_intent import RequestIntent
-        from decimal import Decimal
-        from unittest.mock import AsyncMock
 
         # Create CostController mock
         cost_controller = AsyncMock(spec=CostController)
@@ -2098,10 +2101,7 @@ class TestEdgeCases:
         # Mock cost estimates - make sure costs are different
         async def estimate_cost(request_intent, provider_id, key_id):
             # Use different costs to ensure different scores
-            if key_id == key1.id:
-                cost = Decimal("0.01")
-            else:
-                cost = Decimal("0.05")  # 5x difference
+            cost = Decimal("0.01") if key_id == key1.id else Decimal("0.05")  # 5x difference
             return CostEstimate(
                 amount=cost,
                 currency="USD",
@@ -2139,7 +2139,6 @@ class TestEdgeCases:
         """Test cost scoring falls back when CostController fails."""
         from apikeyrouter.domain.components.cost_controller import CostController
         from apikeyrouter.domain.models.request_intent import RequestIntent
-        from unittest.mock import AsyncMock
 
         # Create CostController mock that raises exception
         cost_controller = AsyncMock(spec=CostController)
@@ -2213,19 +2212,19 @@ class TestEdgeCases:
     ):
         """Test that budget penalties are applied for soft enforcement."""
         from apikeyrouter.domain.components.cost_controller import CostController
-        from apikeyrouter.domain.models.budget_check_result import BudgetCheckResult
         from apikeyrouter.domain.models.budget import EnforcementMode
-        from unittest.mock import AsyncMock
+        from apikeyrouter.domain.models.budget_check_result import BudgetCheckResult
 
         # Create CostController mock
         cost_controller = AsyncMock(spec=CostController)
 
         # Mock get_budget to return soft enforcement budget
         async def get_budget(budget_id):
-            from apikeyrouter.domain.models.budget import Budget, BudgetScope
-            from apikeyrouter.domain.models.quota_state import TimeWindow
             from datetime import datetime, timedelta
             from decimal import Decimal
+
+            from apikeyrouter.domain.models.budget import Budget, BudgetScope
+            from apikeyrouter.domain.models.quota_state import TimeWindow
 
             return Budget(
                 id=budget_id,
@@ -2273,13 +2272,14 @@ class TestEdgeCases:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ):
         """Test that abundant quota state boosts scores."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",
@@ -2316,13 +2316,14 @@ class TestEdgeCases:
         self, routing_engine_with_quota, mock_key_manager, mock_quota_engine
     ):
         """Test that constrained quota state penalizes scores."""
+        from datetime import datetime, timedelta
+
         from apikeyrouter.domain.models.quota_state import (
             CapacityEstimate,
             CapacityState,
             QuotaState,
             TimeWindow,
         )
-        from datetime import datetime, timedelta
 
         key1 = await mock_key_manager.register_key(
             key_material="sk-test-key-1",

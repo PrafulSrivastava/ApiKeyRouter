@@ -2,7 +2,6 @@
 
 import os
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -138,7 +137,7 @@ class TestSecureStorage:
         secret_key = "sk-secret-error-test-key-67890"
 
         # Register key
-        key = await self.key_manager.register_key(
+        _key = await self.key_manager.register_key(
             key_material=secret_key,
             provider_id="openai",
         )
@@ -146,7 +145,7 @@ class TestSecureStorage:
         # Try to get non-existent key (should raise error)
         try:
             await self.key_manager.get_key_material("non-existent-key-id")
-            assert False, "Should have raised KeyNotFoundError"
+            raise AssertionError("Should have raised KeyNotFoundError")
         except KeyNotFoundError as e:
             error_message = str(e)
             # Error message should not contain key material
@@ -222,7 +221,7 @@ class TestSecureStorage:
         self.observability.events.clear()
 
         # Get key material (triggers decryption and audit event)
-        decrypted = await self.key_manager.get_key_material(key.id)
+        _decrypted = await self.key_manager.get_key_material(key.id)
 
         # Verify audit event was emitted
         key_access_events = [
@@ -258,7 +257,7 @@ class TestSecureStorage:
         # Try to get key material (should fail)
         try:
             await self.key_manager.get_key_material("invalid-key")
-            assert False, "Should have raised EncryptionError"
+            raise AssertionError("Should have raised EncryptionError")
         except EncryptionError:
             pass
 

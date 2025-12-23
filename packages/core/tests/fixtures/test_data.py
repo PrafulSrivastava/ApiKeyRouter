@@ -7,13 +7,11 @@ all test files to ensure consistent test data.
 
 import uuid
 from datetime import datetime, timedelta
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
-from apikeyrouter.domain.interfaces.state_store import StateStore
 from apikeyrouter.domain.models.api_key import APIKey, KeyState
 from apikeyrouter.domain.models.quota_state import (
     CapacityEstimate,

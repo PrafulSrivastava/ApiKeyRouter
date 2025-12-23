@@ -13,8 +13,7 @@ from apikeyrouter.domain.models.api_key import APIKey, KeyState
 from apikeyrouter.domain.models.state_transition import StateTransition
 from apikeyrouter.infrastructure.utils.encryption import (
     EncryptionError,
-    EncryptionService,
-    encrypt_key_material,  # Backward compatibility
+    EncryptionService,  # Backward compatibility
 )
 from apikeyrouter.infrastructure.utils.validation import (
     ValidationError,
@@ -658,7 +657,7 @@ class KeyManager:
 
             encrypted_bytes = key.key_material.encode('utf-8')
             decrypted_material = self._encryption_service.decrypt(encrypted_bytes)
-            
+
             # Log audit event for key access (decryption)
             try:
                 await self._observability.emit_event(
@@ -681,11 +680,13 @@ class KeyManager:
                     message=f"Failed to emit key_access audit event: {e}",
                     context={"key_id": key_id},
                 )
-            
+
             return decrypted_material
         except EncryptionError as e:
             # Log failed access attempt
-            try:
+            from contextlib import suppress
+
+            with suppress(Exception):  # Ignore audit logging errors for failed access
                 await self._observability.emit_event(
                     event_type="key_access",
                     payload={
@@ -700,10 +701,7 @@ class KeyManager:
                         "access_type": "key_material_decryption",
                     },
                 )
-            except Exception:
-                # Ignore audit logging errors for failed access
-                pass
-            
+
             raise EncryptionError(
                 f"Failed to decrypt key material for key {key_id}: {e}"
             ) from e

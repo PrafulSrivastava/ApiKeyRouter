@@ -1,7 +1,7 @@
 """Integration tests for OpenAIAdapter."""
 
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -568,13 +568,13 @@ class TestOpenAIAdapterMapError:
         self, openai_adapter: OpenAIAdapter
     ) -> None:
         """Test that map_error extracts retry-after as HTTP date."""
-        from datetime import datetime, timezone, timedelta
+        from datetime import timedelta
 
         mock_response = MagicMock()
         mock_response.status_code = 429
         mock_response.text = "Rate limit exceeded"
         # HTTP date format: Wed, 21 Oct 2015 07:28:00 GMT
-        retry_date = datetime.now(timezone.utc) + timedelta(seconds=120)
+        retry_date = datetime.now(UTC) + timedelta(seconds=120)
         mock_response.headers = {"retry-after": retry_date.strftime("%a, %d %b %Y %H:%M:%S GMT")}
         mock_response.json.return_value = {}
         error = httpx.HTTPStatusError("429", request=MagicMock(), response=mock_response)

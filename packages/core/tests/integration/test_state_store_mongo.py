@@ -1,15 +1,15 @@
 """Integration tests for MongoDB state store connection and configuration."""
 
 import os
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import (
-    OperationFailure,
-    ConnectionFailure,
     ConfigurationError,
+    ConnectionFailure,
     NetworkTimeout,
+    OperationFailure,
     ServerSelectionTimeoutError,
 )
 
@@ -34,7 +34,7 @@ async def mongo_store(mongodb_url: str) -> MongoStateStore:
         client.close()
     except Exception:
         pytest.skip("MongoDB is not available. Start MongoDB with 'docker-compose up -d' or set MONGODB_URL")
-    
+
     return MongoStateStore(
         connection_url=mongodb_url,
         database_name="test_apikeyrouter",
@@ -252,7 +252,7 @@ async def test_invalid_connection_url_raises_state_store_error():
     """Test that invalid connection URL raises StateStoreError on initialization."""
     # Create store with invalid URL
     store = MongoStateStore(connection_url="invalid-url")
-    
+
     # Act & Assert - Error should occur when trying to initialize
     with pytest.raises((StateStoreError, ConnectionFailure, ConfigurationError)):
         await store.initialize()

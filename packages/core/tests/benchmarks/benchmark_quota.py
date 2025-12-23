@@ -92,7 +92,7 @@ async def test_benchmark_quota_calculation_with_multiple_updates(
         for _ in range(10):
             await quota_engine.update_capacity(key.id, 10)
 
-    result = await benchmark(update_multiple_times)
+    _result = await benchmark(update_multiple_times)
 
     # Verify quota state is updated
     quota_state = await quota_engine.get_quota_state(key.id)

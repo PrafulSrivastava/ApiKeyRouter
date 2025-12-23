@@ -13,7 +13,6 @@ from apikeyrouter.domain.models.api_key import APIKey, KeyState
 from apikeyrouter.domain.models.quota_state import (
     CapacityEstimate,
     QuotaState,
-    TimeWindow,
 )
 from apikeyrouter.domain.models.routing_decision import (
     RoutingDecision,

@@ -1,8 +1,7 @@
 """Tests for RequestIntent and Message models."""
 
-from pydantic import ValidationError
-
 import pytest
+from pydantic import ValidationError
 
 from apikeyrouter.domain.models.request_intent import Message, RequestIntent
 

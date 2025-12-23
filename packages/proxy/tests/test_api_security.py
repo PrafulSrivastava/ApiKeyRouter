@@ -1,14 +1,12 @@
 """Tests for API security features."""
 
 import os
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
-from starlette.responses import JSONResponse
 
-from apikeyrouter_proxy.main import app
 from apikeyrouter_proxy.middleware.auth import (
     AuthenticationMiddleware,
     get_management_api_key,
@@ -53,14 +51,14 @@ class TestAuthentication:
     async def test_verify_management_api_key_missing(self) -> None:
         """Test verification with missing API key."""
         request = MagicMock(spec=["headers"])
-        with pytest.raises(Exception):  # HTTPException
+        with pytest.raises(HTTPException):
             await verify_management_api_key(request, x_api_key=None)
 
     @pytest.mark.asyncio
     async def test_verify_management_api_key_invalid(self) -> None:
         """Test verification with invalid API key."""
         request = MagicMock(spec=["headers"])
-        with pytest.raises(Exception):  # HTTPException
+        with pytest.raises(HTTPException):
             await verify_management_api_key(request, x_api_key="invalid-key")
 
     @pytest.mark.asyncio
@@ -68,7 +66,7 @@ class TestAuthentication:
         """Test verification when management API key is not configured."""
         os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
         request = MagicMock(spec=["headers"])
-        with pytest.raises(Exception):  # HTTPException
+        with pytest.raises(HTTPException):
             await verify_management_api_key(request, x_api_key="any-key")
 
     def test_authentication_middleware_allows_public_endpoints(self) -> None:

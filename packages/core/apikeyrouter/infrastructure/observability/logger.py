@@ -39,9 +39,7 @@ def sanitize_for_logging(data: Any) -> Any:
     elif isinstance(data, str):
         # Check if string looks like an API key (starts with common prefixes)
         # This is a safety check, but primary protection is removing key_material fields
-        if data.startswith(("sk-", "pk-", "xai-", "claude-", "anthropic-")):
-            # Only redact if it's a reasonable length (not just a prefix match)
-            if len(data) > 20:  # API keys are typically longer
+        if data.startswith(("sk-", "pk-", "xai-", "claude-", "anthropic-")) and len(data) > 20:  # API keys are typically longer
                 return "[REDACTED]"
     return data
 
@@ -113,7 +111,7 @@ class DefaultObservabilityManager(ObservabilityManager):
         try:
             # Sanitize payload and metadata to remove sensitive data
             sanitized_payload = sanitize_for_logging(payload)
-            
+
             # Merge metadata into event data
             event_data = {
                 **sanitized_payload,
@@ -152,10 +150,10 @@ class DefaultObservabilityManager(ObservabilityManager):
         try:
             # Sanitize context to remove sensitive data
             sanitized_context = sanitize_for_logging(context) if context else None
-            
+
             # Sanitize message string as well
             sanitized_message = sanitize_for_logging(message)
-            
+
             log_method = getattr(self._logger, level.lower(), self._logger.info)
             if sanitized_context:
                 log_method(sanitized_message, **sanitized_context)
