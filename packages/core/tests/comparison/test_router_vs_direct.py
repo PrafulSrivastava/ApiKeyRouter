@@ -399,30 +399,30 @@ async def test_reliability_automatic_failover(router_with_multiple_keys, direct_
     print("\n" + "="*70)
     print("🛡️ RELIABILITY TEST RESULTS - Automatic Failover Comparison")
     print("="*70)
-    
+
     print("\n📈 SUCCESS RATES:")
-    print(f"  Direct Approach (Single Key):")
+    print("  Direct Approach (Single Key):")
     print(f"    • Successful requests: {direct_successes}/{direct_requests}")
     print(f"    • Failed requests: {direct_failures}/{direct_requests}")
     print(f"    • Success rate: {direct_success_rate*100:.1f}%")
     print(f"    • Failure rate: {(1-direct_success_rate)*100:.1f}%")
-    
-    print(f"\n  Router Approach (Multiple Keys + Failover):")
+
+    print("\n  Router Approach (Multiple Keys + Failover):")
     print(f"    • Successful requests: {router_successes}/{router_requests}")
     print(f"    • Failed requests: {router_failures}/{router_requests}")
     print(f"    • Success rate: {router_success_rate*100:.1f}%")
     print(f"    • Failure rate: {(1-router_success_rate)*100:.1f}%")
-    
+
     # Calculate improvement metrics
     improvement = router_success_rate - direct_success_rate
     improvement_percent = (improvement / direct_success_rate * 100) if direct_success_rate > 0 else 0
     prevented_failures = router_successes - direct_successes
-    
+
     print("\n📊 IMPROVEMENT METRICS:")
     print(f"  • Reliability improvement: +{improvement*100:.1f} percentage points")
     print(f"  • Relative improvement: +{improvement_percent:.1f}% better than direct approach")
     print(f"  • Failures prevented: {prevented_failures} additional successful requests")
-    
+
     print("\n💡 KEY INSIGHTS:")
     if router_success_rate >= 0.99:
         print("  ✅ Router achieved 99%+ reliability through automatic failover")
@@ -432,24 +432,24 @@ async def test_reliability_automatic_failover(router_with_multiple_keys, direct_
         print("     Multiple keys provide redundancy and fault tolerance")
     else:
         print("  ⚠️  Router reliability needs investigation")
-    
-    print(f"\n  • Direct approach: Vulnerable to single point of failure")
-    print(f"    - When the single key fails, all requests fail")
-    print(f"    - No automatic recovery mechanism")
-    print(f"    - Requires manual intervention to switch keys")
-    
-    print(f"\n  • Router approach: Built-in fault tolerance")
-    print(f"    - Automatic detection of key failures")
-    print(f"    - Seamless failover to healthy backup keys")
-    print(f"    - No manual intervention required")
-    print(f"    - Maintains service availability even with key issues")
-    
+
+    print("\n  • Direct approach: Vulnerable to single point of failure")
+    print("    - When the single key fails, all requests fail")
+    print("    - No automatic recovery mechanism")
+    print("    - Requires manual intervention to switch keys")
+
+    print("\n  • Router approach: Built-in fault tolerance")
+    print("    - Automatic detection of key failures")
+    print("    - Seamless failover to healthy backup keys")
+    print("    - No manual intervention required")
+    print("    - Maintains service availability even with key issues")
+
     print("\n🎯 BUSINESS IMPACT:")
     print("  • Reduced downtime: Automatic failover prevents service interruptions")
     print("  • Better user experience: Users don't see errors from key failures")
     print("  • Lower operational costs: No need for manual key rotation")
     print("  • Higher SLA compliance: 99.9%+ uptime achievable with multiple keys")
-    
+
     print("\n" + "="*70)
 
 
