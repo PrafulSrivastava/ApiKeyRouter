@@ -1,27 +1,98 @@
 # API Key Router
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Type checking: mypy](https://img.shields.io/badge/type%20checking-mypy-blue.svg)](https://mypy.readthedocs.io/)
+A Python library for routing LLM API requests across multiple API keys with automatic failover, quota tracking, and cost-aware routing.
 
-Intelligent API key routing library and proxy service for managing multiple LLM provider API keys with quota awareness, cost optimization, and intelligent routing.
+## What Problem This Solves
 
-## Quick Start
+When using LLM APIs at scale, you face several problems:
+- **Rate limits**: Single API keys hit rate limits, causing request failures
+- **Quota exhaustion**: Keys run out of quota mid-operation
+- **Cost management**: No visibility into which keys are being used or how much they cost
+- **Manual failover**: You must manually detect failures and switch keys
+
+This library automatically routes requests across multiple API keys, handles failures gracefully, tracks quota consumption, and can optimize for cost or reliability.
+
+## Why This Exists
+
+Existing solutions (LiteLLM, LLM-API-Key-Proxy) focus on proxy services and don't provide a library interface. This project provides both:
+- **Library mode**: Use directly in Python applications
+- **Proxy mode**: Standalone HTTP service (planned, not yet implemented)
+
+The library is designed for applications that need programmatic control over routing decisions, quota management, and cost optimization.
+
+## What This Project Does
+
+**Core Library (Implemented):**
+- Routes requests across multiple API keys for the same provider
+- Automatically fails over to alternative keys on rate limits, quota exhaustion, or network errors
+- Tracks quota consumption and key state (available, throttled, exhausted)
+- Supports routing objectives: cost optimization, reliability, fairness (load balancing)
+- Encrypts API keys at rest
+- Provides structured logging and observability events
+- Works in-memory by default (no external dependencies required)
+- Optional MongoDB persistence for state storage
+
+**Provider Support:**
+- OpenAI (fully implemented)
+- Anthropic (not yet implemented)
+- Gemini (not yet implemented)
+- Custom providers via adapter interface
+
+**State Storage:**
+- In-memory store (default, no dependencies)
+- MongoDB store (optional, requires MongoDB connection)
+
+## What This Project Does NOT Do (Yet)
+
+**Proxy Service:**
+- HTTP API endpoints are not implemented (middleware exists but no routes)
+- OpenAI-compatible endpoints (`/v1/chat/completions`, etc.) are planned but not available
+- Management API (`/api/v1/keys`, etc.) is planned but not available
+
+**Features:**
+- Budget enforcement (mentioned in docs but not verified in code)
+- Quality-based routing (falls back to reliability)
+- Redis state store (mentioned in architecture but not found in code)
+- Predictive quota exhaustion (basic tracking exists, predictive algorithms not implemented)
+
+**Production Readiness:**
+- No distributed state synchronization
+- No built-in metrics dashboard
+- No automatic key rotation
+- No webhook notifications for quota exhaustion
+
+## Who Should Use This
+
+- **Python applications** that make LLM API calls and need automatic failover
+- **Teams managing multiple API keys** for the same provider
+- **Applications hitting rate limits** and needing automatic key rotation
+- **Cost-conscious users** who want visibility into which keys are used
+- **Developers who prefer libraries** over proxy services for integration
+
+## Who Should NOT Use This
+
+- **Non-Python applications**: This is a Python library only
+- **Users needing HTTP proxy immediately**: Proxy endpoints are not implemented yet
+- **Users with single API key**: No benefit over direct API calls
+- **Users needing Anthropic/Gemini support**: Only OpenAI is implemented
+- **Production deployments requiring distributed state**: Currently in-memory or single MongoDB instance only
+
+## Quick Start (5 minutes)
+
+### Prerequisites
+
+- Python 3.11 or higher
+- Poetry 1.7.1 or higher ([installation guide](https://python-poetry.org/docs/#installation))
 
 ### Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone <repository-url>
 cd ApiKeyRouter
 
 # Install dependencies
 poetry install
-
-# Set up environment (optional)
-cp .env.example .env
-# Edit .env with your configuration
 ```
 
 ### Basic Usage
@@ -29,362 +100,172 @@ cp .env.example .env
 ```python
 import asyncio
 from apikeyrouter import ApiKeyRouter
-from apikeyrouter.domain.models.request_intent import RequestIntent, Message
 from apikeyrouter.infrastructure.adapters.openai_adapter import OpenAIAdapter
+from apikeyrouter.domain.models.request_intent import RequestIntent, Message
 
 async def main():
     # Initialize router
     router = ApiKeyRouter()
     
-    # Register provider and keys
+    # Register OpenAI provider
     await router.register_provider("openai", OpenAIAdapter())
-    await router.register_key("sk-your-key-1", "openai")
-    await router.register_key("sk-your-key-2", "openai")
     
-    # Route a request
+    # Register multiple API keys
+    await router.register_key("sk-your-openai-key-1", "openai")
+    await router.register_key("sk-your-openai-key-2", "openai")
+    
+    # Make a request
     intent = RequestIntent(
         model="gpt-4",
         messages=[Message(role="user", content="Hello!")],
-        provider_id="openai"
+        parameters={"provider_id": "openai"}
     )
     
     response = await router.route(intent)
-    print(f"Response: {response.content}")
+    print(response.content)  # LLM response
     print(f"Key used: {response.key_used}")
+    print(f"Tokens: {response.metadata.tokens_used.total_tokens}")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+asyncio.run(main())
 ```
 
-**See [Quick Start Guide](docs/guides/quick-start.md) for more examples.**
+### With Routing Objectives
 
-## Features
+```python
+# Optimize for cost
+response = await router.route(intent, objective="cost")
 
-- 🔄 **Intelligent Routing**: Automatically routes requests across multiple API keys based on availability, cost, and reliability
-- 📊 **Quota Awareness**: Tracks and manages API quotas, rate limits, and usage across providers
-- 💰 **Cost Optimization**: Minimizes costs by selecting the most cost-effective keys while maintaining reliability
-- 🔌 **Provider Agnostic**: Works with OpenAI, Anthropic, Gemini, and other LLM providers
-- 🚀 **FastAPI Proxy**: OpenAI-compatible HTTP API for easy integration
-- 🔒 **Secure**: Encrypted key storage and secure state management
-- 📈 **Observable**: Comprehensive logging, metrics, and tracing
-- 🐳 **Docker Ready**: Pre-built Docker images and Docker Compose setup
+# Optimize for reliability
+response = await router.route(intent, objective="reliability")
 
-## Project Structure
-
-This project uses a **monorepo structure** with Poetry workspace to manage the core library and proxy service packages together.
-
-```
-apikeyrouter/
-├── packages/
-│   ├── core/              # Core library package (apikeyrouter-core)
-│   └── proxy/             # Proxy service package (apikeyrouter-proxy)
-├── docs/                  # Documentation
-├── pyproject.toml         # Root workspace configuration
-└── poetry.lock           # Dependency lock file (generated)
+# Load balancing (default)
+response = await router.route(intent, objective="fairness")
 ```
 
-### Package Overview
+### With MongoDB Persistence (Optional)
 
-- **apikeyrouter-core**: Core library providing intelligent API key routing, quota management, and cost optimization
-- **apikeyrouter-proxy**: FastAPI proxy service that exposes the core library via OpenAI-compatible HTTP endpoints
+```python
+from apikeyrouter.infrastructure.state_store.mongo_store import MongoStateStore
 
-## Prerequisites
+# Initialize MongoDB store
+mongo_store = MongoStateStore(
+    connection_string="mongodb://localhost:27017",
+    database_name="apikeyrouter"
+)
+await mongo_store.initialize()
 
-- **Python 3.11+**: Required for all packages
-- **Poetry 1.7.1+**: Package manager and dependency management
-  - Installation: Follow [Poetry installation guide](https://python-poetry.org/docs/#installation)
-  - Verify: `poetry --version`
-- **Docker & Docker Compose** (optional, for local MongoDB/Redis):
-  - Installation: [Docker Desktop](https://www.docker.com/products/docker-desktop) or [Docker Engine](https://docs.docker.com/engine/install/)
-  - Verify: `docker --version` and `docker-compose --version`
+# Use with router
+router = ApiKeyRouter(state_store=mongo_store)
+```
 
-## Development Setup
-
-### Working with the Monorepo
-
-The Poetry workspace allows you to work with both packages simultaneously:
+### Running Tests
 
 ```bash
-# Install all dependencies
-poetry install
-
-# Add dependency to core package
-poetry add <package> --directory packages/core
-
-# Add dependency to proxy package
-poetry add <package> --directory packages/proxy
-
-# Run commands in specific package
-poetry run <command> --directory packages/core
-```
-
-### Environment Variables
-
-All environment variables are managed through the `.env` file. Docker Compose automatically loads all variables from `.env`.
-
-Copy `.env.example` to `.env` and configure as needed:
-
-- **Required**: `APIKEYROUTER_ENCRYPTION_KEY` (generate with: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
-- **MongoDB**: `MONGODB_URL`, `MONGO_INITDB_DATABASE`
-- **Redis**: `REDIS_URL` (uncomment redis service in docker-compose.yml first)
-- **Proxy**: `PORT`, `APIKEYROUTER_MANAGEMENT_API_KEY`, `ENABLE_HSTS`, `CORS_ORIGINS`
-- **Core Settings**: `APIKEYROUTER_MAX_DECISIONS`, `APIKEYROUTER_LOG_LEVEL`, etc.
-
-See `.env.example` for a complete list of all available environment variables.
-
-**Note:** The library works in-memory by default. MongoDB and Redis are optional for testing persistence backends.
-
-### Docker Compose Services
-
-The project includes a `docker-compose.yml` file for local development with optional persistence backends:
-
-- **MongoDB**: Available on `localhost:27017` (for optional persistent storage)
-- **Redis**: Optional, commented out by default (uncomment in `docker-compose.yml` to enable)
-
-**Start services:**
-```bash
-docker-compose up -d
-```
-
-**Stop services:**
-```bash
-docker-compose down
-```
-
-**View logs:**
-```bash
-docker-compose logs -f
-```
-
-### Running the Proxy Service
-
-```bash
-cd packages/proxy
-poetry run uvicorn apikeyrouter_proxy.main:app --reload
-```
-
-## Testing
-
-### Run All Tests
-
-```bash
+# Run all tests
 poetry run pytest
-```
 
-### Run Tests for Specific Package
-
-```bash
-# Core package tests
-poetry run pytest packages/core/tests
-
-# Proxy package tests
-poetry run pytest packages/proxy/tests
-```
-
-### Run Specific Test Types
-
-```bash
-# Unit tests only
+# Run specific test suite
 poetry run pytest packages/core/tests/unit
-
-# Integration tests only
 poetry run pytest packages/core/tests/integration
 
-# Benchmark/performance tests
-poetry run pytest packages/core/tests/benchmarks --benchmark-only
-
-# Run tests with specific markers
-poetry run pytest -m unit          # Unit tests
-poetry run pytest -m integration  # Integration tests
-poetry run pytest -m benchmark    # Benchmark tests
-```
-
-### Benchmark Tests
-
-Performance benchmarks measure routing decision time, key lookup performance, and quota calculation speed:
-
-```bash
-# Run all benchmark tests with performance metrics
-poetry run pytest packages/core/tests/benchmarks --benchmark-only
-
-# Run specific benchmark file
-poetry run pytest packages/core/tests/benchmarks/benchmark_routing.py --benchmark-only
-
-# Run benchmarks with verbose output
-poetry run pytest packages/core/tests/benchmarks --benchmark-only -v
-
-# Compare benchmark results (saves to .benchmarks/)
-poetry run pytest packages/core/tests/benchmarks --benchmark-only --benchmark-save=baseline
-```
-
-**Performance Targets:**
-- Key lookup: p95 < 1ms
-- Quota operations: p95 < 5ms
-- Routing decisions: p95 < 10ms
-
-### Test Coverage
-
-```bash
-# Run tests with coverage report
+# Run with coverage
 poetry run pytest --cov=packages/core/apikeyrouter --cov-report=html
-
-# View coverage report
-# Open htmlcov/index.html in your browser
 ```
 
-**Note:** Some integration tests require optional dependencies (e.g., `motor` for MongoDB tests). These tests are automatically skipped if dependencies are not installed.
+## How It Works (High Level)
 
-## Code Quality
+### Request Flow
 
-The project uses **ruff** for linting and formatting, and **mypy** for type checking. All quality checks run automatically in CI.
+1. **Request**: You call `router.route(request_intent)` with a model, messages, and provider ID
+2. **Routing Decision**: Library selects best key based on:
+   - Key availability (not throttled or exhausted)
+   - Quota remaining
+   - Routing objective (cost, reliability, fairness)
+   - Key health and failure history
+3. **Execution**: Library calls provider API using selected key
+4. **Failure Handling**: If request fails (rate limit, network error):
+   - Library automatically tries next best key (up to 3 attempts)
+   - Updates key state (throttled, exhausted)
+   - Returns error only if all keys fail
+5. **State Update**: After successful request:
+   - Updates quota consumption
+   - Records usage statistics
+   - Updates key last-used timestamp
 
-### Format Code
+### Routing Logic
 
-```bash
-poetry run ruff format .
-```
+The routing engine scores each eligible key based on:
+- **Cost objective**: Selects key with lowest estimated cost
+- **Reliability objective**: Selects key with highest success rate and lowest failure count
+- **Fairness objective**: Distributes load evenly across keys (round-robin with state awareness)
 
-### Lint Code
+Keys are excluded if:
+- State is `Throttled` (in cooldown period)
+- State is `Exhausted` (quota depleted)
+- State is `Disabled` or `Invalid`
 
-```bash
-poetry run ruff check .
-```
+### Failure Handling
 
-### Type Check
+The library implements automatic failover:
+- **Rate limit (429)**: Key marked as `Throttled`, next key tried immediately
+- **Quota exhausted**: Key marked as `Exhausted`, excluded from routing
+- **Network error**: Retried with next key (up to 3 attempts)
+- **Authentication error**: Key marked as `Invalid`, not retried
 
-```bash
-poetry run mypy packages/core packages/proxy
-```
+All failures are logged with structured events for observability.
 
-### Run All Quality Checks
+## Project Status
 
-```bash
-poetry run ruff format . && poetry run ruff check . && poetry run mypy packages/core packages/proxy
-```
+**Version**: 0.1.0 (Early development)
 
-### Pre-commit Hooks (Optional)
+**Maturity**: Core library is functional but proxy service is incomplete. Breaking changes are expected in future releases.
 
-Install pre-commit hooks to automatically run quality checks before each commit:
+**Current State**:
+- ✅ Core routing library works
+- ✅ OpenAI adapter implemented
+- ✅ In-memory and MongoDB state stores
+- ✅ Comprehensive test suite
+- ❌ Proxy HTTP API not implemented
+- ❌ Additional providers (Anthropic, Gemini) not implemented
+- ❌ Budget enforcement not verified
+- ❌ Distributed state synchronization not implemented
 
-```bash
-# Install pre-commit (if not already installed)
-poetry add --group dev pre-commit
+**Breaking Changes**: The API is not stable. Expect changes to:
+- `RequestIntent` model structure
+- Routing objective API
+- State store interfaces
+- Provider adapter interface
 
-# Install the git hook scripts
-poetry run pre-commit install
+## Roadmap
 
-# Run hooks manually on all files
-poetry run pre-commit run --all-files
-```
+**Short-term (Next 3 months)**:
+- Implement proxy HTTP API endpoints (`/v1/chat/completions`, etc.)
+- Add Anthropic adapter
+- Add management API for key registration via HTTP
+- Improve documentation and examples
 
-Pre-commit hooks will automatically:
-- Fix trailing whitespace and end-of-file issues
-- Format code with ruff
-- Check linting with ruff
-- Validate YAML, JSON, and TOML files
+**Medium-term (Next 6 months)**:
+- Add Gemini adapter
+- Implement budget enforcement
+- Add Redis state store option
+- Performance optimizations
 
-### Code Style Standards
-
-See [`docs/architecture/coding-standards.md`](docs/architecture/coding-standards.md) for detailed coding standards and conventions.
-
-Key standards:
-- **Line Length:** 100 characters
-- **Formatter:** ruff (format on save recommended)
-- **Type Checking:** mypy with strict mode enabled
-- **Import Sorting:** Automatic via ruff
-
-## Documentation
-
-- **[API Reference](packages/core/API_REFERENCE.md)**: Complete API documentation
-- **[Workflows](docs/workflow/product-flow.md)**: Product workflows and system flows
-- **[Examples](docs/examples/)**: Code examples and usage patterns
-- **[Use Cases](docs/use-cases.md)**: Common use cases and examples
-- **[Architecture](docs/architecture/)**: System architecture and design decisions
-- **[User Guides](docs/guides/)**: Step-by-step guides and tutorials
-
-## Package Details
-
-### Core Package (`packages/core/`)
-
-The core library provides:
-- API key management and state tracking
-- Quota awareness and capacity management
-- Intelligent routing algorithms
-- Cost optimization
-- Provider adapter interfaces
-
-**Key Dependencies:**
-- `pydantic` - Data validation and models
-- `httpx` - Async HTTP client
-- `structlog` - Structured logging
-
-### Proxy Package (`packages/proxy/`)
-
-The proxy service provides:
-- OpenAI-compatible HTTP API endpoints
-- Management API for keys, providers, and policies
-- FastAPI-based async HTTP server
-
-**Key Dependencies:**
-- `fastapi` - Web framework
-- `uvicorn` - ASGI server
-- `apikeyrouter-core` - Core library (local dependency)
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
-
-- Code of Conduct
-- Development workflow
-- Coding standards
-- Testing requirements
-- Pull request process
-
-### Quick Contribution Guide
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes following our coding standards
-4. Write or update tests
-5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## Security
-
-### Reporting Security Issues
-
-**Please do not report security vulnerabilities through public GitHub issues.**
-
-Instead, please report them via email to [security@example.com] or see [SECURITY.md](SECURITY.md) for details.
-
-### Security Practices
-
-- **Dependency Scanning**: Automated vulnerability scanning runs on every commit
-- **Static Analysis**: Bandit scans code for security issues
-- **Secret Scanning**: Automated secret scanning prevents accidental commits
-- **Dependabot**: Automated security updates for dependencies
-- **Security Headers**: All API responses include security headers
-- **Encryption**: API keys encrypted at rest using AES-256
-- **Input Validation**: All inputs validated to prevent injection attacks
-- **Audit Logging**: All security events logged
-
-See [SECURITY.md](SECURITY.md) for detailed security information.
+**Long-term**:
+- Distributed state synchronization
+- Metrics dashboard
+- Automatic key rotation
+- Webhook notifications
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Support
 
-- **Documentation**: Check the [docs](docs/) directory
-- **Issues**: [GitHub Issues](https://github.com/your-username/ApiKeyRouter/issues)
-- **Security**: See [SECURITY.md](SECURITY.md) for reporting security vulnerabilities
-
-## Acknowledgments
-
-- Built with [FastAPI](https://fastapi.tiangolo.com/)
-- Uses [Pydantic](https://docs.pydantic.dev/) for data validation
-- Powered by [Poetry](https://python-poetry.org/) for dependency management
+- **Documentation**: See [docs/](docs/) directory
+- **API Reference**: See [API_REFERENCE.md](API_REFERENCE.md)
+- **Issues**: Report bugs and feature requests via GitHub Issues

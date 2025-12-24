@@ -576,7 +576,7 @@ class RoutingEngine:
             # Calculate success rate for explanation
             total_requests = selected_key.usage_count + selected_key.failure_count
             success_rate = selected_key.usage_count / total_requests if total_requests > 0 else 0.95
-            explanation: str = self._reliability_strategy.generate_explanation(
+            explanation = self._reliability_strategy.generate_explanation(
                 selected_key_id=selected_key.id,
                 success_rate=success_rate,
                 quota_state=quota_state,
