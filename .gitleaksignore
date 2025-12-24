@@ -1,11 +1,12 @@
 # Gitleaks ignore file
 # Test files contain legitimate test fixtures that should not trigger secret scanning
+# Note: Gitleaks doesn't support glob patterns, use specific file paths or inline comments
 
-# Test fixtures and test data
-packages/core/tests/**/*.py
-packages/core/test_manual_example.py
+# Test fixtures and test data - use inline # gitleaks:allow comments in test files
+# For reference, test files are in:
+# - packages/core/tests/
+# - packages/proxy/tests/
+# - docs/examples/
 
 # Documentation examples (these are intentionally fake keys for demonstration)
-docs/examples/**/*.py
-docs/guides/**/*.md
-
+# Use inline # gitleaks:allow comments in documentation files

@@ -61,7 +61,7 @@ async def router_with_providers():
     keys = []
     for i in range(3):
         key = await router.register_key(
-            key_material=f"test-openai-key-{i}",
+            key_material=f"test-openai-key-{i}",  # gitleaks:allow
             provider_id="openai",
             metadata={"region": "us-east", "tier": "standard"},
         )
@@ -123,7 +123,7 @@ async def test_scenario_1_multi_provider_failover(router_with_providers):
     anthropic_keys = []
     for i in range(2):
         key = await router.register_key(
-            key_material=f"test-anthropic-key-{i}",
+            key_material=f"test-anthropic-key-{i}",  # gitleaks:allow
             provider_id="anthropic",
             metadata={"region": "us-west", "tier": "premium"},
         )
@@ -275,12 +275,12 @@ async def test_scenario_2_cost_aware_model_selection(router_with_providers):
 
     # Register keys with different model access
     gpt4_key = await router.register_key(
-        key_material="test-gpt4-key",
+        key_material="test-gpt4-key",  # gitleaks:allow
         provider_id="openai",
         metadata={"models": ["gpt-4", "gpt-3.5"], "cost_tier": "premium"},
     )
     await router.register_key(
-        key_material="test-gpt35-key",
+        key_material="test-gpt35-key",  # gitleaks:allow
         provider_id="openai",
         metadata={"models": ["gpt-3.5"], "cost_tier": "standard"},
     )
@@ -716,14 +716,14 @@ async def test_scenario_5_multi_tenant_isolation(router_with_providers):
     tenant_a_keys = []
     for i in range(2):
         key = await router.register_key(
-            key_material=f"test-tenant-a-key-{i}",
+            key_material=f"test-tenant-a-key-{i}",  # gitleaks:allow
             provider_id="openai",
             metadata={"tenant_id": "tenant-a", "tier": "premium"},
         )
         tenant_a_keys.append(key)
 
     await router.register_key(
-        key_material="test-tenant-b-key",
+        key_material="test-tenant-b-key",  # gitleaks:allow
         provider_id="openai",
         metadata={"tenant_id": "tenant-b", "tier": "standard"},
     )
@@ -867,13 +867,13 @@ async def test_scenario_6_geographic_compliance_routing(router_with_providers):
 
     # Register region-specific keys
     await router.register_key(
-        key_material="test-eu-key-1234567890",
+        key_material="test-eu-key-1234567890",  # gitleaks:allow
         provider_id="openai",
         metadata={"region": "eu", "compliance": "gdpr"},
     )
 
     await router.register_key(
-        key_material="test-us-key-1234567890",
+        key_material="test-us-key-1234567890",  # gitleaks:allow
         provider_id="openai",
         metadata={"region": "us", "compliance": "standard"},
     )
@@ -991,13 +991,13 @@ async def test_scenario_7_priority_based_routing(router_with_providers):
 
     # Register priority-based keys
     await router.register_key(
-        key_material="test-premium-key",
+        key_material="test-premium-key",  # gitleaks:allow
         provider_id="openai",
         metadata={"tier": "premium", "priority": "high", "rate_limit": "high"},
     )
 
     await router.register_key(
-        key_material="test-standard-key",
+        key_material="test-standard-key",  # gitleaks:allow
         provider_id="openai",
         metadata={"tier": "standard", "priority": "normal", "rate_limit": "standard"},
     )
