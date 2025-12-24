@@ -16,12 +16,10 @@ Scenarios:
 10. Circuit Breaker Pattern - Cascading failure prevention
 """
 
-import asyncio
-import time
+import contextlib
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -30,7 +28,6 @@ from apikeyrouter import ApiKeyRouter
 from apikeyrouter.domain.components.cost_controller import CostController
 from apikeyrouter.domain.components.quota_awareness_engine import QuotaAwarenessEngine
 from apikeyrouter.domain.models.api_key import KeyState
-from apikeyrouter.domain.models.budget import BudgetScope, EnforcementMode
 from apikeyrouter.domain.models.quota_state import (
     CapacityEstimate,
     CapacityState,
@@ -64,7 +61,7 @@ async def router_with_providers():
     keys = []
     for i in range(3):
         key = await router.register_key(
-            key_material=f"sk-openai-key-{i}",
+            key_material=f"test-openai-key-{i}",
             provider_id="openai",
             metadata={"region": "us-east", "tier": "standard"},
         )
@@ -126,7 +123,7 @@ async def test_scenario_1_multi_provider_failover(router_with_providers):
     anthropic_keys = []
     for i in range(2):
         key = await router.register_key(
-            key_material=f"sk-anthropic-key-{i}",
+            key_material=f"test-anthropic-key-{i}",
             provider_id="anthropic",
             metadata={"region": "us-west", "tier": "premium"},
         )
@@ -166,7 +163,7 @@ async def test_scenario_1_multi_provider_failover(router_with_providers):
             call_count["openai"] += 1
             # Simulate outage after 5 requests
             if call_count["openai"] > 5:
-                from apikeyrouter.domain.models.exceptions import SystemError, ErrorCategory
+                from apikeyrouter.domain.models.exceptions import ErrorCategory, SystemError
 
                 raise SystemError(
                     message="Provider unavailable",
@@ -224,7 +221,7 @@ async def test_scenario_1_multi_provider_failover(router_with_providers):
     print(f"  • Successful: {successes}")
     print(f"  • Failed: {failures}")
     print(f"  • Success rate: {success_rate*100:.1f}%")
-    print(f"\n  Provider Usage:")
+    print("\n  Provider Usage:")
     print(f"    - OpenAI: {provider_usage.get('openai', 0)} requests")
     print(f"    - Anthropic: {provider_usage.get('anthropic', 0)} requests")
 
@@ -278,12 +275,12 @@ async def test_scenario_2_cost_aware_model_selection(router_with_providers):
 
     # Register keys with different model access
     gpt4_key = await router.register_key(
-        key_material="sk-gpt4-key",
+        key_material="test-gpt4-key",
         provider_id="openai",
         metadata={"models": ["gpt-4", "gpt-3.5"], "cost_tier": "premium"},
     )
-    gpt35_key = await router.register_key(
-        key_material="sk-gpt35-key",
+    await router.register_key(
+        key_material="test-gpt35-key",
         provider_id="openai",
         metadata={"models": ["gpt-3.5"], "cost_tier": "standard"},
     )
@@ -326,7 +323,6 @@ async def test_scenario_2_cost_aware_model_selection(router_with_providers):
 
             # Determine model based on key
             model = "gpt-4" if key.id == gpt4_key.id else "gpt-3.5"
-            cost_per_1k = Decimal("0.03") if model == "gpt-4" else Decimal("0.002")
 
             return SystemResponse(
                 content=f"{model} response",
@@ -387,10 +383,10 @@ async def test_scenario_2_cost_aware_model_selection(router_with_providers):
     total_potential_savings = savings_per_simple * 10
 
     print("\n📈 RESULTS:")
-    print(f"  Simple Requests (10):")
+    print("  Simple Requests (10):")
     print(f"    • Total cost: ${simple_cost:.4f}")
     print(f"    • Average per request: ${simple_cost/10:.4f}")
-    print(f"\n  Complex Requests (5):")
+    print("\n  Complex Requests (5):")
     print(f"    • Total cost: ${complex_cost:.4f}")
     print(f"    • Average per request: ${complex_cost/5:.4f}")
 
@@ -480,7 +476,7 @@ async def test_scenario_3_rate_limit_recovery(router_with_providers):
 
             # Simulate rate limit on first key after 3 requests
             if key.id == keys[0].id and call_count[key.id] > 3:
-                from apikeyrouter.domain.models.exceptions import SystemError, ErrorCategory
+                from apikeyrouter.domain.models.exceptions import ErrorCategory, SystemError
 
                 raise SystemError(
                     message="Rate limit exceeded",
@@ -507,7 +503,7 @@ async def test_scenario_3_rate_limit_recovery(router_with_providers):
 
         for i in range(total_requests):
             try:
-                response = await router.route(intent, objective=objective)
+                await router.route(intent, objective=objective)
                 successes += 1
                 if i > 3:  # After rate limit should have triggered
                     successful_retries += 1
@@ -517,7 +513,7 @@ async def test_scenario_3_rate_limit_recovery(router_with_providers):
                     rate_limit_hits += 1
 
     # Check key state recovery
-    key1_state = await router._key_manager.get_key(keys[0].id)
+    await router._key_manager.get_key(keys[0].id)
 
     print("\n📈 RESULTS:")
     print(f"  • Total requests: {total_requests}")
@@ -525,7 +521,7 @@ async def test_scenario_3_rate_limit_recovery(router_with_providers):
     print(f"  • Failed: {failures}")
     print(f"  • Rate limit hits detected: {rate_limit_hits}")
     print(f"  • Successful retries after rate limit: {successful_retries}")
-    print(f"\n  Key Usage Distribution:")
+    print("\n  Key Usage Distribution:")
     for key in keys:
         print(f"    - Key {key.id[:8]}...: {key_usage[key.id]} requests")
 
@@ -551,7 +547,7 @@ async def test_scenario_3_rate_limit_recovery(router_with_providers):
     assert success_rate >= 0.1, f"Success rate should be >= 10% after rate limit, got {success_rate*100:.1f}%"
     # Router should have processed some requests successfully
     # Note: Backup key usage depends on router's retry logic and key state management
-    print(f"\n  Note: Router retry behavior may vary based on configuration")
+    print("\n  Note: Router retry behavior may vary based on configuration")
     print("\n" + "="*70)
 
 
@@ -625,8 +621,8 @@ async def test_scenario_4_quota_exhaustion_prevention(router_with_providers):
     print("📊 SCENARIO 4: Quota Exhaustion Prevention Test")
     print("="*70)
     print("\n📊 Test Setup:")
-    print(f"  - Key 1: Critical state (500 tokens remaining)")
-    print(f"  - Key 2: Abundant state (10,000 tokens remaining)")
+    print("  - Key 1: Critical state (500 tokens remaining)")
+    print("  - Key 2: Abundant state (10,000 tokens remaining)")
     print("  - Router should route to Key 2 to prevent exhaustion")
 
     adapter = router._providers.get("openai")
@@ -660,14 +656,12 @@ async def test_scenario_4_quota_exhaustion_prevention(router_with_providers):
         objective = RoutingObjective(primary=ObjectiveType.Reliability.value)
 
         for _ in range(total_requests):
-            try:
+            with contextlib.suppress(Exception):
                 await router.route(intent, objective=objective)
-            except Exception:
-                pass
 
     print("\n📈 RESULTS:")
     print(f"  • Total requests: {total_requests}")
-    print(f"\n  Key Usage:")
+    print("\n  Key Usage:")
     for key in keys:
         state = "Critical" if key.id == keys[0].id else "Abundant"
         print(f"    - Key {key.id[:8]}... ({state}): {key_usage[key.id]} requests")
@@ -722,14 +716,14 @@ async def test_scenario_5_multi_tenant_isolation(router_with_providers):
     tenant_a_keys = []
     for i in range(2):
         key = await router.register_key(
-            key_material=f"sk-tenant-a-key-{i}",
+            key_material=f"test-tenant-a-key-{i}",
             provider_id="openai",
             metadata={"tenant_id": "tenant-a", "tier": "premium"},
         )
         tenant_a_keys.append(key)
 
-    tenant_b_key = await router.register_key(
-        key_material="sk-tenant-b-key",
+    await router.register_key(
+        key_material="test-tenant-b-key",
         provider_id="openai",
         metadata={"tenant_id": "tenant-b", "tier": "standard"},
     )
@@ -818,10 +812,10 @@ async def test_scenario_5_multi_tenant_isolation(router_with_providers):
                 pass
 
     print("\n📈 RESULTS:")
-    print(f"  Tenant A:")
+    print("  Tenant A:")
     print(f"    • Requests: {tenant_usage['tenant-a']}")
     print(f"    • Cost: ${tenant_costs['tenant-a']:.4f}")
-    print(f"\n  Tenant B:")
+    print("\n  Tenant B:")
     print(f"    • Requests: {tenant_usage['tenant-b']}")
     print(f"    • Cost: ${tenant_costs['tenant-b']:.4f}")
 
@@ -872,14 +866,14 @@ async def test_scenario_6_geographic_compliance_routing(router_with_providers):
     router, keys = router_with_providers
 
     # Register region-specific keys
-    eu_key = await router.register_key(
-        key_material="sk-eu-key-1234567890",
+    await router.register_key(
+        key_material="test-eu-key-1234567890",
         provider_id="openai",
         metadata={"region": "eu", "compliance": "gdpr"},
     )
 
-    us_key = await router.register_key(
-        key_material="sk-us-key-1234567890",
+    await router.register_key(
+        key_material="test-us-key-1234567890",
         provider_id="openai",
         metadata={"region": "us", "compliance": "standard"},
     )
@@ -940,16 +934,12 @@ async def test_scenario_6_geographic_compliance_routing(router_with_providers):
 
         # Make region-specific requests
         for _ in range(5):
-            try:
+            with contextlib.suppress(Exception):
                 await router.route(eu_intent, objective=objective)
-            except Exception:
-                pass
 
         for _ in range(5):
-            try:
+            with contextlib.suppress(Exception):
                 await router.route(us_intent, objective=objective)
-            except Exception:
-                pass
 
     print("\n📈 RESULTS:")
     print(f"  • EU region requests: {region_usage['eu']}")
@@ -1000,14 +990,14 @@ async def test_scenario_7_priority_based_routing(router_with_providers):
     router, keys = router_with_providers
 
     # Register priority-based keys
-    premium_key = await router.register_key(
-        key_material="sk-premium-key",
+    await router.register_key(
+        key_material="test-premium-key",
         provider_id="openai",
         metadata={"tier": "premium", "priority": "high", "rate_limit": "high"},
     )
 
-    standard_key = await router.register_key(
-        key_material="sk-standard-key",
+    await router.register_key(
+        key_material="test-standard-key",
         provider_id="openai",
         metadata={"tier": "standard", "priority": "normal", "rate_limit": "standard"},
     )
@@ -1068,16 +1058,12 @@ async def test_scenario_7_priority_based_routing(router_with_providers):
 
         # Make priority-based requests
         for _ in range(5):
-            try:
+            with contextlib.suppress(Exception):
                 await router.route(premium_intent, objective=objective)
-            except Exception:
-                pass
 
         for _ in range(5):
-            try:
+            with contextlib.suppress(Exception):
                 await router.route(standard_intent, objective=objective)
-            except Exception:
-                pass
 
     print("\n📈 RESULTS:")
     print(f"  • Premium tier requests: {priority_usage['premium']}")
@@ -1208,11 +1194,11 @@ async def test_scenario_8_cost_attribution_by_feature(router_with_providers):
                 pass
 
     print("\n📈 RESULTS:")
-    print(f"  Chatbot Feature:")
+    print("  Chatbot Feature:")
     print(f"    • Requests: {feature_requests['chatbot']}")
     print(f"    • Cost: ${feature_costs['chatbot']:.4f}")
     print(f"    • Avg per request: ${feature_costs['chatbot']/max(feature_requests['chatbot'], 1):.4f}")
-    print(f"\n  Code Generation Feature:")
+    print("\n  Code Generation Feature:")
     print(f"    • Requests: {feature_requests['code-generation']}")
     print(f"    • Cost: ${feature_costs['code-generation']:.4f}")
     print(f"    • Avg per request: ${feature_costs['code-generation']/max(feature_requests['code-generation'], 1):.4f}")
@@ -1281,8 +1267,8 @@ async def test_scenario_9_dynamic_key_rotation(router_with_providers):
     print("🔄 SCENARIO 9: Dynamic Key Rotation Test")
     print("="*70)
     print("\n📊 Test Setup:")
-    print(f"  - Key 1: Exhausted state (should be avoided)")
-    print(f"  - Key 2: Available state (should be used)")
+    print("  - Key 1: Exhausted state (should be avoided)")
+    print("  - Key 2: Available state (should be used)")
     print("  - Testing automatic routing away from exhausted key")
 
     adapter = router._providers.get("openai")
@@ -1316,14 +1302,12 @@ async def test_scenario_9_dynamic_key_rotation(router_with_providers):
         objective = RoutingObjective(primary=ObjectiveType.Reliability.value)
 
         for _ in range(total_requests):
-            try:
+            with contextlib.suppress(Exception):
                 await router.route(intent, objective=objective)
-            except Exception:
-                pass
 
     print("\n📈 RESULTS:")
     print(f"  • Total requests: {total_requests}")
-    print(f"\n  Key Usage:")
+    print("\n  Key Usage:")
     for key in keys:
         state = "Exhausted" if key.id == keys[0].id else "Available"
         print(f"    - Key {key.id[:8]}... ({state}): {key_usage[key.id]} requests")
@@ -1411,7 +1395,7 @@ async def test_scenario_10_circuit_breaker_pattern(router_with_providers):
 
             # Simulate repeated failures on first key
             if key.id == keys[0].id and call_count[key.id] <= 5:
-                from apikeyrouter.domain.models.exceptions import SystemError, ErrorCategory
+                from apikeyrouter.domain.models.exceptions import ErrorCategory, SystemError
 
                 raise SystemError(
                     message="Service unavailable",
@@ -1438,7 +1422,7 @@ async def test_scenario_10_circuit_breaker_pattern(router_with_providers):
 
         for i in range(total_requests):
             try:
-                response = await router.route(intent, objective=objective)
+                await router.route(intent, objective=objective)
                 successes += 1
             except Exception as e:
                 failures += 1
@@ -1452,7 +1436,7 @@ async def test_scenario_10_circuit_breaker_pattern(router_with_providers):
     print(f"  • Successful: {successes}")
     print(f"  • Failed: {failures}")
     print(f"  • Success rate: {success_rate*100:.1f}%")
-    print(f"\n  Key Usage:")
+    print("\n  Key Usage:")
     for key in keys:
         print(f"    - Key {key.id[:8]}...: {key_usage[key.id]} requests")
 
