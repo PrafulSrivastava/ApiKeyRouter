@@ -331,3 +331,4 @@ def on_request_failure(request_type, name, response_time, exception):
     """Called when a request fails."""
     # Can be used for custom logging or metrics
     pass
+

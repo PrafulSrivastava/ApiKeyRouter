@@ -8,9 +8,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from apikeyrouter_proxy.middleware.auth import (
-    AuthenticationMiddleware,
+    ManagementAPIAuthMiddleware,
     get_management_api_key,
-    verify_management_api_key,
+    require_management_auth,
 )
 from apikeyrouter_proxy.middleware.cors import CORSMiddleware, get_cors_origins
 from apikeyrouter_proxy.middleware.rate_limit import RateLimitMiddleware
@@ -23,10 +23,13 @@ class TestAuthentication:
     def setup_method(self) -> None:
         """Set up test environment."""
         self.test_api_key = "test-management-api-key-12345"
-        os.environ["APIKEYROUTER_MANAGEMENT_API_KEY"] = self.test_api_key
+        os.environ["MANAGEMENT_API_KEY"] = self.test_api_key
+        # Clean up old env var if present
+        os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
 
     def teardown_method(self) -> None:
         """Clean up test environment."""
+        os.environ.pop("MANAGEMENT_API_KEY", None)
         os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
 
     def test_get_management_api_key(self) -> None:
@@ -36,52 +39,105 @@ class TestAuthentication:
 
     def test_get_management_api_key_not_set(self) -> None:
         """Test getting management API key when not set."""
-        os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
+        os.environ.pop("MANAGEMENT_API_KEY", None)
         api_key = get_management_api_key()
         assert api_key is None
 
     @pytest.mark.asyncio
-    async def test_verify_management_api_key_valid(self) -> None:
-        """Test verification with valid API key."""
-        request = MagicMock(spec=["headers"])
-        result = await verify_management_api_key(request, x_api_key=self.test_api_key)
+    async def test_require_management_auth_valid(self) -> None:
+        """Test require_management_auth dependency with valid Bearer token."""
+        request = MagicMock()
+        request.headers = {"Authorization": f"Bearer {self.test_api_key}"}
+        request.url.path = "/api/v1/keys"
+        request.method = "GET"
+        request.client = MagicMock()
+        request.client.host = "127.0.0.1"
+        request.state = MagicMock()
+
+        result = await require_management_auth(request)
         assert result is True
+        assert request.state.authenticated is True
+        assert request.state.management_api_key == self.test_api_key
 
     @pytest.mark.asyncio
-    async def test_verify_management_api_key_missing(self) -> None:
-        """Test verification with missing API key."""
-        request = MagicMock(spec=["headers"])
-        with pytest.raises(HTTPException):
-            await verify_management_api_key(request, x_api_key=None)
+    async def test_require_management_auth_missing_header(self) -> None:
+        """Test require_management_auth with missing Authorization header."""
+        request = MagicMock()
+        request.headers = {}
+        request.url.path = "/api/v1/keys"
+        request.method = "GET"
+        request.client = MagicMock()
+        request.client.host = "127.0.0.1"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_management_auth(request)
+        assert exc_info.value.status_code == 401
+        assert "Missing Authorization header" in exc_info.value.detail
 
     @pytest.mark.asyncio
-    async def test_verify_management_api_key_invalid(self) -> None:
-        """Test verification with invalid API key."""
-        request = MagicMock(spec=["headers"])
-        with pytest.raises(HTTPException):
-            await verify_management_api_key(request, x_api_key="invalid-key")
+    async def test_require_management_auth_invalid_format(self) -> None:
+        """Test require_management_auth with invalid Bearer token format."""
+        request = MagicMock()
+        request.headers = {"Authorization": "InvalidFormat token"}
+        request.url.path = "/api/v1/keys"
+        request.method = "GET"
+        request.client = MagicMock()
+        request.client.host = "127.0.0.1"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_management_auth(request)
+        assert exc_info.value.status_code == 401
+        assert "Invalid Authorization header format" in exc_info.value.detail
 
     @pytest.mark.asyncio
-    async def test_verify_management_api_key_not_configured(self) -> None:
-        """Test verification when management API key is not configured."""
-        os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
-        request = MagicMock(spec=["headers"])
-        with pytest.raises(HTTPException):
-            await verify_management_api_key(request, x_api_key="any-key")
+    async def test_require_management_auth_invalid_key(self) -> None:
+        """Test require_management_auth with invalid API key."""
+        request = MagicMock()
+        request.headers = {"Authorization": "Bearer invalid-key"}
+        request.url.path = "/api/v1/keys"
+        request.method = "GET"
+        request.client = MagicMock()
+        request.client.host = "127.0.0.1"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_management_auth(request)
+        assert exc_info.value.status_code == 401
+        assert "Invalid management API key" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_require_management_auth_not_configured(self) -> None:
+        """Test require_management_auth when management API key is not configured."""
+        os.environ.pop("MANAGEMENT_API_KEY", None)
+        request = MagicMock()
+        request.headers = {"Authorization": "Bearer any-key"}
+        request.url.path = "/api/v1/keys"
+        request.method = "GET"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_management_auth(request)
+        assert exc_info.value.status_code == 401
+        assert "not configured" in exc_info.value.detail
 
     def test_authentication_middleware_allows_public_endpoints(self) -> None:
         """Test that authentication middleware allows public endpoints."""
         test_app = FastAPI()
 
-        @test_app.get("/v1/public")
+        @test_app.get("/v1/chat/completions")
         async def public_endpoint():
             return {"message": "public"}
 
-        test_app.add_middleware(AuthenticationMiddleware)
+        @test_app.get("/health")
+        async def health_endpoint():
+            return {"status": "healthy"}
+
+        test_app.add_middleware(ManagementAPIAuthMiddleware)
         client = TestClient(test_app)
 
-        # Public endpoint should work without API key
-        response = client.get("/v1/public")
+        # Public endpoints should work without API key
+        response = client.get("/v1/chat/completions")
+        assert response.status_code == 200
+
+        response = client.get("/health")
         assert response.status_code == 200
 
     def test_authentication_middleware_protects_management_api(self) -> None:
@@ -92,26 +148,31 @@ class TestAuthentication:
         async def management_endpoint():
             return {"keys": []}
 
-        test_app.add_middleware(AuthenticationMiddleware)
+        test_app.add_middleware(ManagementAPIAuthMiddleware)
         client = TestClient(test_app)
 
-        # Management endpoint without API key should fail
+        # Management endpoint without Authorization header should fail
         response = client.get("/api/v1/keys")
         assert response.status_code == 401
-        assert "Missing X-API-Key header" in response.json()["detail"]
+        assert "Missing Authorization header" in response.json()["detail"]
+
+        # Management endpoint with invalid Bearer format should fail
+        response = client.get("/api/v1/keys", headers={"Authorization": "InvalidFormat token"})
+        assert response.status_code == 401
+        assert "Invalid Authorization header format" in response.json()["detail"]
 
         # Management endpoint with invalid API key should fail
-        response = client.get("/api/v1/keys", headers={"X-API-Key": "invalid-key"})
+        response = client.get("/api/v1/keys", headers={"Authorization": "Bearer invalid-key"})
         assert response.status_code == 401
         assert "Invalid management API key" in response.json()["detail"]
 
-        # Management endpoint with valid API key should succeed
-        response = client.get("/api/v1/keys", headers={"X-API-Key": self.test_api_key})
+        # Management endpoint with valid Bearer token should succeed
+        response = client.get("/api/v1/keys", headers={"Authorization": f"Bearer {self.test_api_key}"})
         assert response.status_code == 200
 
     def test_authentication_middleware_fail_secure(self) -> None:
         """Test that authentication middleware fails secure when key not configured."""
-        os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
+        os.environ.pop("MANAGEMENT_API_KEY", None)
 
         test_app = FastAPI()
 
@@ -119,13 +180,65 @@ class TestAuthentication:
         async def management_endpoint():
             return {"keys": []}
 
-        test_app.add_middleware(AuthenticationMiddleware)
+        test_app.add_middleware(ManagementAPIAuthMiddleware)
         client = TestClient(test_app)
 
         # Should deny access even with a key when management API key is not configured
-        response = client.get("/api/v1/keys", headers={"X-API-Key": "any-key"})
+        response = client.get("/api/v1/keys", headers={"Authorization": "Bearer any-key"})
         assert response.status_code == 401
         assert "not configured" in response.json()["detail"]
+
+    def test_authentication_rate_limiting(self) -> None:
+        """Test rate limiting on authentication attempts."""
+        test_app = FastAPI()
+
+        @test_app.get("/api/v1/keys")
+        async def management_endpoint():
+            return {"keys": []}
+
+        # Set rate limit to 3 attempts per minute
+        test_app.add_middleware(ManagementAPIAuthMiddleware, auth_rate_limit=3, auth_rate_window_seconds=60)
+        client = TestClient(test_app)
+
+        # Make 3 failed authentication attempts (should all fail with 401)
+        for _ in range(3):
+            response = client.get("/api/v1/keys", headers={"Authorization": "Bearer invalid-key"})
+            assert response.status_code == 401
+
+        # 4th attempt should be rate limited (429)
+        response = client.get("/api/v1/keys", headers={"Authorization": "Bearer invalid-key"})
+        assert response.status_code == 429
+        assert "Too many authentication attempts" in response.json()["detail"]
+        assert "retry_after" in response.json()
+        assert "Retry-After" in response.headers
+
+    def test_authentication_rate_limiting_resets_on_success(self) -> None:
+        """Test that successful authentication doesn't count toward rate limit."""
+        test_app = FastAPI()
+
+        @test_app.get("/api/v1/keys")
+        async def management_endpoint():
+            return {"keys": []}
+
+        # Set rate limit to 2 attempts per minute
+        test_app.add_middleware(ManagementAPIAuthMiddleware, auth_rate_limit=2, auth_rate_window_seconds=60)
+        client = TestClient(test_app)
+
+        # Make 1 failed attempt
+        response = client.get("/api/v1/keys", headers={"Authorization": "Bearer invalid-key"})
+        assert response.status_code == 401
+
+        # Successful authentication should not be rate limited
+        response = client.get("/api/v1/keys", headers={"Authorization": f"Bearer {self.test_api_key}"})
+        assert response.status_code == 200
+
+        # Should still be able to make another failed attempt (only 1 failed attempt so far)
+        response = client.get("/api/v1/keys", headers={"Authorization": "Bearer invalid-key"})
+        assert response.status_code == 401
+
+        # Now should be rate limited (2 failed attempts)
+        response = client.get("/api/v1/keys", headers={"Authorization": "Bearer invalid-key"})
+        assert response.status_code == 429
 
 
 class TestRateLimiting:
@@ -341,10 +454,12 @@ class TestAuthorizationRules:
     def setup_method(self) -> None:
         """Set up test environment."""
         self.test_api_key = "test-management-api-key-12345"
-        os.environ["APIKEYROUTER_MANAGEMENT_API_KEY"] = self.test_api_key
+        os.environ["MANAGEMENT_API_KEY"] = self.test_api_key
+        os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
 
     def teardown_method(self) -> None:
         """Clean up test environment."""
+        os.environ.pop("MANAGEMENT_API_KEY", None)
         os.environ.pop("APIKEYROUTER_MANAGEMENT_API_KEY", None)
 
     def test_routing_requests_no_auth_required(self) -> None:
@@ -355,7 +470,7 @@ class TestAuthorizationRules:
         async def routing_endpoint():
             return {"message": "routing"}
 
-        test_app.add_middleware(AuthenticationMiddleware)
+        test_app.add_middleware(ManagementAPIAuthMiddleware)
         client = TestClient(test_app)
 
         # Routing endpoint should work without API key
@@ -382,16 +497,18 @@ class TestAuthorizationRules:
         async def state_endpoint():
             return {"state": {}}
 
-        test_app.add_middleware(AuthenticationMiddleware)
+        test_app.add_middleware(ManagementAPIAuthMiddleware)
         client = TestClient(test_app)
 
-        # All management endpoints should require API key
+        # All management endpoints should require Bearer token
         endpoints = [
             ("GET", "/api/v1/keys"),
             ("POST", "/api/v1/keys"),
             ("DELETE", "/api/v1/keys/key-123"),
             ("GET", "/api/v1/state"),
         ]
+
+        auth_header = f"Bearer {self.test_api_key}"
 
         for method, path in endpoints:
             if method == "GET":
@@ -405,12 +522,12 @@ class TestAuthorizationRules:
 
             assert response.status_code == 401, f"{method} {path} should require auth"
 
-            # With valid API key, should succeed
+            # With valid Bearer token, should succeed
             if method == "GET":
-                response = client.get(path, headers={"X-API-Key": self.test_api_key})
+                response = client.get(path, headers={"Authorization": auth_header})
             elif method == "POST":
-                response = client.post(path, json={}, headers={"X-API-Key": self.test_api_key})
+                response = client.post(path, json={}, headers={"Authorization": auth_header})
             elif method == "DELETE":
-                response = client.delete(path, headers={"X-API-Key": self.test_api_key})
+                response = client.delete(path, headers={"Authorization": auth_header})
 
-            assert response.status_code == 200, f"{method} {path} should work with valid API key"
+            assert response.status_code == 200, f"{method} {path} should work with valid Bearer token"

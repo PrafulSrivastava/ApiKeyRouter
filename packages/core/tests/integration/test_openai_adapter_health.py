@@ -245,3 +245,4 @@ class TestOpenAIAdapterHealth:
             from datetime import datetime
 
             assert isinstance(health.last_check, datetime)
+

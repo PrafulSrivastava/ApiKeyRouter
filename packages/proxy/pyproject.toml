@@ -10,11 +10,17 @@ packages = [{include = "apikeyrouter_proxy"}]
 python = "^3.11"
 apikeyrouter-core = {path = "../core", develop = true}
 fastapi = "^0.109.0"
+structlog = "^24.1.0"
 uvicorn = {extras = ["standard"], version = "^0.27.0"}
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv", "__pycache__", ".pytest_cache"]
 skips = ["B101", "B601"]  # Skip assert_used and shell_injection_subprocess
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::PendingDeprecationWarning",  # Ignore multipart deprecation warning
+]
 
 [build-system]
 requires = ["poetry-core"]

@@ -5,3 +5,4 @@ from apikeyrouter.infrastructure.observability.logger import (
 )
 
 __all__ = ["DefaultObservabilityManager"]
+

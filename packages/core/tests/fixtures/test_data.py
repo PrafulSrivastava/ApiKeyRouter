@@ -331,3 +331,4 @@ def mock_provider_adapter_with_error() -> MagicMock:
         }
     )
     return adapter
+

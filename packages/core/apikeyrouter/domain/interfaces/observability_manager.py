@@ -54,3 +54,4 @@ class ObservabilityError(Exception):
     """Raised when observability operations fail."""
 
     pass
+

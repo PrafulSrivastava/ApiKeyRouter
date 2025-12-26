@@ -79,3 +79,4 @@ class CostEstimate(BaseModel):
     def total_tokens_estimate(self) -> int:
         """Compute total estimated tokens (input + output)."""
         return self.input_tokens_estimate + self.output_tokens_estimate
+
