@@ -183,7 +183,7 @@ if _ui_dir.exists():
     app.mount("/ui", StaticFiles(directory=str(_ui_dir)), name="ui")
 
     @app.get("/", include_in_schema=False)
-    async def root():
+    async def root() -> FileResponse | dict[str, Any]:
         if _ui_index.exists():
             return FileResponse(str(_ui_index))
         return {"message": "ApiKeyRouter Proxy API", "docs": "/docs"}

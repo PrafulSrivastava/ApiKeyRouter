@@ -31,6 +31,7 @@ python-dotenv = "^1.0.0"
 fastapi = "^0.127.0"
 uvicorn = "^0.40.0"
 detect-secrets = "^1.5.0"
+types-pyyaml = "^6.0.12.20250915"
 
 [build-system]
 requires = ["poetry-core"]

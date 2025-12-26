@@ -885,7 +885,7 @@ class ApiKeyRouter:
 
         try:
             # Load configuration from manager
-            config = await self._configuration_manager.load_configuration()
+            config: dict[str, Any] = await self._configuration_manager.load_configuration()
 
             # Apply configuration to router
             await self._apply_configuration(config)

@@ -4,10 +4,10 @@ import asyncio
 import contextlib
 import threading
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
-from watchdog.observers import Observer
+from watchdog.observers import Observer  # type: ignore[import-untyped]
 
 from apikeyrouter.domain.interfaces.observability_manager import ObservabilityManager
 from apikeyrouter.infrastructure.config.file_loader import ConfigurationError
@@ -181,7 +181,7 @@ class ConfigurationFileWatcher:
         self._observability = observability_manager
 
         # Watchdog observer
-        self._observer: Observer | None = None
+        self._observer: Observer | None = None  # type: ignore[valid-type]
         self._handler: ConfigurationFileHandler | None = None
         self._event_loop: asyncio.AbstractEventLoop | None = None
 
@@ -211,15 +211,15 @@ class ConfigurationFileWatcher:
         )
 
         # Create observer
-        self._observer = Observer()
-        self._observer.schedule(
+        self._observer = Observer()  # type: ignore[assignment]
+        self._observer.schedule(  # type: ignore[no-untyped-call]
             self._handler,
             path=str(self._config_file_path.parent),
             recursive=False,
         )
 
         # Start observer
-        self._observer.start()
+        self._observer.start()  # type: ignore[no-untyped-call]
 
         # Log watcher started
         if self._observability:
