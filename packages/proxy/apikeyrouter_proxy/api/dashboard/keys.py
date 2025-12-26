@@ -37,7 +37,7 @@ class KeyStateUpdateRequest(BaseModel):
 @router.get("/keys")
 async def list_keys(
     state_store: Annotated[StateStore, Depends(get_state_store)],
-):
+) -> dict[str, Any]:
     """
     List all API keys with their current states.
     """
@@ -49,7 +49,7 @@ async def list_keys(
 async def create_key(
     request: Annotated[KeyCreateRequest, Body(...)],
     key_manager: Annotated[KeyManager, Depends(get_key_manager_dependency)],
-):
+) -> dict[str, Any]:
     """
     Add a new API key.
     """
@@ -66,7 +66,7 @@ async def update_key_state(
     key_id: Annotated[str, Path(..., description="The ID of the key to update.")],
     request: Annotated[KeyStateUpdateRequest, Body(...)],
     key_manager: Annotated[KeyManager, Depends(get_key_manager_dependency)],
-):
+) -> dict[str, Any]:
     """
     Update the state of an API key.
     """
@@ -82,7 +82,7 @@ async def update_key_state(
 async def get_key_audit_trail(
     key_id: Annotated[str, Path(..., description="The ID of the key to audit.")],
     state_store: Annotated[StateStore, Depends(get_state_store)],
-):
+) -> dict[str, Any]:
     """
     Get the audit trail for an API key.
     """
