@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApiKeyRouter Test UI</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1600px;
+            margin: auto;
+        }
+        .panel {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        h1, h2, h3 {
+            color: #1a2b4d;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h1 { text-align: center; border: none; }
+        form { display: grid; gap: 10px; margin-bottom: 20px; }
+        form input, form select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0366d6;
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #e1e4e8;
+            font-size: 0.9em;
+        }
+        th { font-weight: bold; }
+        .state {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .state-Available { background-color: #2cbe4e; color: white; }
+        .state-Throttled { background-color: #fca32f; color: white; }
+        .state-Exhausted { background-color: #d73a49; color: white; }
+        #llm-response, #routing-breakdown {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            min-height: 100px;
+        }
+        #routing-breakdown { font-family: monospace; font-size: 0.9em; }
+        .reasoning { color: #0366d6; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>ApiKeyRouter - Live Demonstration</h1>
+
+    <div class="container">
+        <!-- Panel 1: Configuration & Control -->
+        <div class="panel">
+            <h2>1. Key & Provider Configuration</h2>
+            <form id="register-key-form">
+                <input type="text" id="alias" placeholder="Key Alias (e.g., OpenAI-Primary)" required>
+                <select id="provider">
+                    <option value="OpenAI">OpenAI</option>
+                    <option value="Anthropic">Anthropic</option>
+                    <option value="Google">Google</option>
+                </select>
+                <input type="number" id="cost" placeholder="Simulated Cost (e.g., 0.002)" step="0.0001" required>
+                <input type="number" id="reliability" placeholder="Simulated Reliability (e.g., 0.998)" step="0.001" max="1" min="0" required>
+                <button type="submit">Add Key</button>
+            </form>
+            <h3>Live Key Status</h3>
+            <table id="key-status-table">
+                <thead>
+                    <tr>
+                        <th>Alias</th>
+                        <th>State</th>
+                        <th>Usage</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Panel 2: Request & Objective -->
+        <div class="panel">
+            <h2>2. Request & Routing Objective</h2>
+            <textarea id="prompt-input" rows="10" placeholder="Enter your prompt here...">Explain quantum computing in simple terms.</textarea>
+            <h3>Routing Objective</h3>
+            <select id="routing-objective">
+                <option value="Cost">Cost (Prioritize cheapest key)</option>
+                <option value="Reliability">Reliability (Prioritize most reliable key)</option>
+                <option value="Fairness">Fairness (Distribute load evenly)</option>
+            </select>
+            <button id="send-request-btn" style="margin-top: 20px;">Send Request</button>
+        </div>
+
+        <!-- Panel 3: Response & Explanation -->
+        <div class="panel">
+            <h2>3. Response & "The Why"</h2>
+            <h3>LLM Response</h3>
+            <div id="llm-response">The response from the model will appear here...</div>
+            <h3>Routing Breakdown</h3>
+            <div id="routing-breakdown">The reasoning behind the router's decision will be shown here...</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const keys = [];
+            let requestCounter = 0;
+
+            const registerKeyForm = document.getElementById('register-key-form');
+            const keyStatusTableBody = document.querySelector('#key-status-table tbody');
+            const sendRequestBtn = document.getElementById('send-request-btn');
+            const llmResponseDiv = document.getElementById('llm-response');
+            const routingBreakdownDiv = document.getElementById('routing-breakdown');
+
+            function renderKeyTable() {
+                keyStatusTableBody.innerHTML = '';
+                keys.forEach((key, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${key.alias}</td>
+                        <td><span class="state state-${key.state}">${key.state}</span></td>
+                        <td>${key.usageCount}</td>
+                        <td>
+                            <select class="state-changer" data-index="${index}">
+                                <option value="Available" ${key.state === 'Available' ? 'selected' : ''}>Available</option>
+                                <option value="Throttled" ${key.state === 'Throttled' ? 'selected' : ''}>Throttled</option>
+                                <option value="Exhausted" ${key.state === 'Exhausted' ? 'selected' : ''}>Exhausted</option>
+                            </select>
+                        </td>
+                    `;
+                    keyStatusTableBody.appendChild(row);
+                });
+            }
+
+            function addKey(alias, provider, cost, reliability) {
+                keys.push({
+                    id: `key-${Date.now()}`,
+                    alias,
+                    provider,
+                    cost: parseFloat(cost),
+                    reliability: parseFloat(reliability),
+                    state: 'Available',
+                    usageCount: 0,
+                });
+                renderKeyTable();
+            }
+
+            registerKeyForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const alias = document.getElementById('alias').value;
+                const provider = document.getElementById('provider').value;
+                const cost = document.getElementById('cost').value;
+                const reliability = document.getElementById('reliability').value;
+                addKey(alias, provider, cost, reliability);
+                registerKeyForm.reset();
+            });
+
+            document.body.addEventListener('change', (e) => {
+                if (e.target.classList.contains('state-changer')) {
+                    const keyIndex = e.target.dataset.index;
+                    keys[keyIndex].state = e.target.value;
+                    renderKeyTable();
+                }
+            });
+
+            sendRequestBtn.addEventListener('click', () => {
+                const objective = document.getElementById('routing-objective').value;
+                const prompt = document.getElementById('prompt-input').value;
+
+                if (!prompt) {
+                    alert("Please enter a prompt.");
+                    return;
+                }
+
+                const eligibleKeys = keys.filter(k => k.state === 'Available');
+                let decision = {};
+
+                if (eligibleKeys.length === 0) {
+                    decision.key = null;
+                    decision.reason = "No keys were in the 'Available' state. The request could not be served.";
+                    decision.response = "Error: No eligible keys available to handle the request.";
+                } else {
+                    let selectedKey;
+                    switch (objective) {
+                        case 'Cost':
+                            selectedKey = eligibleKeys.reduce((prev, curr) => prev.cost < curr.cost ? prev : curr);
+                            decision.reason = `Selected key '${selectedKey.alias}' because it has the lowest cost ($${selectedKey.cost}) among all available keys.`;
+                            break;
+                        case 'Reliability':
+                            selectedKey = eligibleKeys.reduce((prev, curr) => prev.reliability > curr.reliability ? prev : curr);
+                            decision.reason = `Selected key '${selectedKey.alias}' because it has the highest reliability (${selectedKey.reliability * 100}%) among all available keys.`;
+                            break;
+                        case 'Fairness':
+                            // Simple round-robin for demonstration
+                            requestCounter++;
+                            const startIndex = requestCounter % eligibleKeys.length;
+                            selectedKey = eligibleKeys[startIndex];
+                            decision.reason = `Selected key '${selectedKey.alias}' to distribute the load evenly across available keys (Fairness objective).`;
+                            break;
+                    }
+                    decision.key = selectedKey;
+                    selectedKey.usageCount++;
+                    decision.response = `(Simulated response from ${selectedKey.provider} via key ${selectedKey.alias}): The answer to "${prompt.substring(0, 30)}..." is 42.`;
+                }
+                
+                llmResponseDiv.textContent = decision.response;
+                routingBreakdownDiv.innerHTML = `
+                    <p><strong>Objective:</strong> ${objective}</p>
+                    <p><strong>Key Selected:</strong> ${decision.key ? decision.key.alias : 'None'}</p>
+                    <p><strong>Reasoning:</strong> <span class="reasoning">${decision.reason}</span></p>
+                `;
+                renderKeyTable();
+            });
+            
+            // Add some default keys for quick demo
+            addKey('OpenAI-Fast-Cheap', 'OpenAI', 0.0015, 0.995);
+            addKey('Anthropic-Reliable', 'Anthropic', 0.0040, 0.999);
+            addKey('Google-Balanced', 'Google', 0.0025, 0.997);
+        });
+    </script>
+</body>
+</html>
