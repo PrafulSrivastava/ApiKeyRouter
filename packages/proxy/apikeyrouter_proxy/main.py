@@ -4,6 +4,7 @@ import asyncio
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -172,11 +173,19 @@ app.add_middleware(RateLimitMiddleware)
 # Authentication middleware (innermost, executes last)
 app.add_middleware(AuthenticationMiddleware)
 
-app.mount("/ui", StaticFiles(directory="tests/UI"), name="ui")
+# Get UI directory path relative to this module
+_ui_dir = Path(__file__).parent.parent / "tests" / "UI"
+_ui_index = _ui_dir / "index.html"
 
-@app.get("/", include_in_schema=False)
-async def root():
-    return FileResponse("tests/UI/index.html")
+# Only mount UI if directory exists (for development/testing)
+if _ui_dir.exists():
+    app.mount("/ui", StaticFiles(directory=str(_ui_dir)), name="ui")
+
+    @app.get("/", include_in_schema=False)
+    async def root():
+        if _ui_index.exists():
+            return FileResponse(str(_ui_index))
+        return {"message": "ApiKeyRouter Proxy API", "docs": "/docs"}
 
 app.include_router(v1.router, prefix="/v1")
 app.include_router(management.router, prefix="/api/v1")

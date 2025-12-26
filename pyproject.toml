@@ -160,6 +160,16 @@ addopts = [
     "--tb=short",
     "-ra",
     "--import-mode=importlib",
+    "-m", "not ui",  # Exclude UI tests by default
+]
+norecursedirs = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.egg-info",
+    "UI",  # Exclude UI directory from test collection
+    "ui",  # Exclude ui directory (case-insensitive)
 ]
 markers = [
     "unit: Unit tests",
@@ -167,6 +177,7 @@ markers = [
     "benchmark: Performance benchmark tests",
     "e2e: End-to-end tests",
     "slow: Slow running tests",
+    "ui: UI tests (disabled by default)",
 ]
 filterwarnings = [
     "error",
