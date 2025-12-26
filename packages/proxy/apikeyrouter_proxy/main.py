@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from apikeyrouter_proxy.api import management, v1
+from apikeyrouter_proxy.api.dashboard import keys as dashboard_api
 from apikeyrouter_proxy.middleware.auth import AuthenticationMiddleware
 from apikeyrouter_proxy.middleware.cors import CORSMiddleware
 from apikeyrouter_proxy.middleware.rate_limit import RateLimitMiddleware
@@ -189,3 +190,4 @@ if _ui_dir.exists():
 
 app.include_router(v1.router, prefix="/v1")
 app.include_router(management.router, prefix="/api/v1")
+app.include_router(dashboard_api.router, prefix="/api/dashboard", tags=["dashboard"])
