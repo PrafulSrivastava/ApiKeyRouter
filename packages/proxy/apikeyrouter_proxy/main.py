@@ -3,7 +3,10 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
+from apikeyrouter_proxy.api import management, v1
 from apikeyrouter_proxy.middleware.auth import AuthenticationMiddleware
 from apikeyrouter_proxy.middleware.cors import CORSMiddleware
 from apikeyrouter_proxy.middleware.rate_limit import RateLimitMiddleware
@@ -30,7 +33,11 @@ app.add_middleware(RateLimitMiddleware)
 # Authentication middleware (innermost, executes last)
 app.add_middleware(AuthenticationMiddleware)
 
-# Import and register routes (will be created in future stories)
-# from apikeyrouter_proxy.api import v1, management
-# app.include_router(v1.router, prefix="/v1")
-# app.include_router(management.router, prefix="/api/v1")
+app.mount("/ui", StaticFiles(directory="tests/UI"), name="ui")
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return FileResponse("tests/UI/index.html")
+
+app.include_router(v1.router, prefix="/v1")
+app.include_router(management.router, prefix="/api/v1")

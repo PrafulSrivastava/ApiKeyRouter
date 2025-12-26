@@ -19,7 +19,3 @@ skips = ["B101", "B601"]  # Skip assert_used and shell_injection_subprocess
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-
-
-
