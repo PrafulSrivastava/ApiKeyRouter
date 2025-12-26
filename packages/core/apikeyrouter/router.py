@@ -17,6 +17,7 @@ from apikeyrouter.domain.interfaces.observability_manager import ObservabilityMa
 from apikeyrouter.domain.interfaces.provider_adapter import ProviderAdapter
 from apikeyrouter.domain.interfaces.state_store import StateStore
 from apikeyrouter.domain.models.api_key import APIKey
+from apikeyrouter.domain.models.policy import Policy, PolicyScope, PolicyType
 from apikeyrouter.domain.models.request_intent import RequestIntent
 from apikeyrouter.domain.models.routing_decision import (
     ObjectiveType,
@@ -24,6 +25,8 @@ from apikeyrouter.domain.models.routing_decision import (
 )
 from apikeyrouter.domain.models.system_error import ErrorCategory, SystemError
 from apikeyrouter.domain.models.system_response import SystemResponse
+from apikeyrouter.infrastructure.config.file_loader import ConfigurationError
+from apikeyrouter.infrastructure.config.manager import ConfigurationManager
 from apikeyrouter.infrastructure.config.settings import RouterSettings
 from apikeyrouter.infrastructure.observability.logger import (
     DefaultObservabilityManager,
@@ -69,6 +72,7 @@ class ApiKeyRouter:
         state_store: StateStore | None = None,
         observability_manager: ObservabilityManager | None = None,
         config: RouterSettings | dict[str, Any] | None = None,
+        configuration_manager: ConfigurationManager | None = None,
     ) -> None:
         """Initialize ApiKeyRouter with dependencies.
 
@@ -81,6 +85,8 @@ class ApiKeyRouter:
                    - RouterSettings instance
                    - Dictionary with configuration values
                    - None (loads from environment variables)
+            configuration_manager: Optional ConfigurationManager for dynamic configuration
+                                 management and hot reload.
 
         Raises:
             ValueError: If configuration is invalid.
@@ -132,6 +138,12 @@ class ApiKeyRouter:
         # Provider-adapter mapping storage (must be initialized before RoutingEngine)
         self._providers: dict[str, ProviderAdapter] = {}
 
+        # Policy storage (for dynamic configuration management)
+        self._policies: dict[str, Policy] = {}
+
+        # ConfigurationManager for dynamic configuration
+        self._configuration_manager = configuration_manager
+
         # Initialize RoutingEngine
         self._routing_engine = RoutingEngine(
             key_manager=self._key_manager,
@@ -144,11 +156,23 @@ class ApiKeyRouter:
     async def __aenter__(self) -> "ApiKeyRouter":
         """Async context manager entry.
 
+        If ConfigurationManager is configured, automatically loads configuration
+        from file on entry.
+
         Returns:
             Self for use in async with statement.
         """
-        # Perform any async initialization if needed
-        # Currently, all components initialize synchronously
+        # Load configuration from ConfigurationManager if configured
+        if self._configuration_manager is not None:
+            try:
+                await self.load_configuration_from_manager()
+            except Exception as e:
+                # Log error but don't fail initialization
+                await self._observability_manager.log(
+                    level="WARNING",
+                    message="Failed to load initial configuration from ConfigurationManager",
+                    context={"error": str(e)},
+                )
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -207,6 +231,15 @@ class ApiKeyRouter:
             ObservabilityManager instance.
         """
         return self._observability_manager
+
+    @property
+    def configuration_manager(self) -> ConfigurationManager | None:
+        """Get ConfigurationManager instance.
+
+        Returns:
+            ConfigurationManager instance if configured, None otherwise.
+        """
+        return self._configuration_manager
 
     async def register_provider(
         self,
@@ -833,6 +866,271 @@ class ApiKeyRouter:
             message="Request failed: no keys available after retries",
             retryable=False,
         )
+
+    async def load_configuration_from_manager(self) -> dict[str, Any]:
+        """Load configuration from ConfigurationManager and apply it.
+
+        Loads configuration from the ConfigurationManager (if configured) and
+        applies keys and policies to the router without restart.
+
+        Returns:
+            Dictionary containing loaded configuration.
+
+        Raises:
+            ValueError: If ConfigurationManager is not configured.
+            ConfigurationError: If configuration cannot be loaded or applied.
+        """
+        if self._configuration_manager is None:
+            raise ValueError("ConfigurationManager is not configured")
+
+        try:
+            # Load configuration from manager
+            config = await self._configuration_manager.load_configuration()
+
+            # Apply configuration to router
+            await self._apply_configuration(config)
+
+            return config
+
+        except ConfigurationError:
+            raise
+        except Exception as e:
+            raise ConfigurationError(f"Failed to load configuration: {e}") from e
+
+    async def apply_configuration(self, config: dict[str, Any]) -> None:
+        """Apply configuration changes to the router.
+
+        Applies keys and policies from configuration without restart.
+        This method is called automatically when ConfigurationManager
+        loads or updates configuration.
+
+        Args:
+            config: Configuration dictionary with keys, policies, and providers.
+
+        Raises:
+            ValueError: If configuration is invalid.
+        """
+        await self._apply_configuration(config)
+
+    async def _apply_configuration(self, config: dict[str, Any]) -> None:
+        """Internal method to apply configuration changes.
+
+        Args:
+            config: Configuration dictionary with keys, policies, and providers.
+        """
+        # Apply keys
+        keys_config = config.get("keys", [])
+        for key_config in keys_config:
+            try:
+                key_id = key_config.get("key_id")
+                key_material = key_config.get("key_material")
+                provider_id = key_config.get("provider_id")
+                metadata = key_config.get("metadata", {})
+
+                if not key_material or not provider_id:
+                    await self._observability_manager.log(
+                        level="WARNING",
+                        message="Skipping invalid key configuration",
+                        context={"key_config": key_config},
+                    )
+                    continue
+
+                # Check if key already exists
+                existing_key = await self._key_manager.get_key(key_id) if key_id else None
+
+                if existing_key:
+                    # Update existing key (re-register with new material/metadata)
+                    # Note: KeyManager doesn't have an update method, so we re-register
+                    # This will create a new key with the same ID if key_id is provided
+                    await self._observability_manager.log(
+                        level="INFO",
+                        message="Key already exists, skipping registration from config",
+                        context={"key_id": key_id, "provider_id": provider_id},
+                    )
+                else:
+                    # Register new key
+                    await self.register_key(
+                        key_material=key_material,
+                        provider_id=provider_id,
+                        metadata=metadata,
+                    )
+
+            except Exception as e:
+                await self._observability_manager.log(
+                    level="ERROR",
+                    message="Failed to apply key configuration",
+                    context={
+                        "key_config": key_config,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    },
+                )
+
+        # Apply policies
+        policies_config = config.get("policies", [])
+        for policy_config in policies_config:
+            try:
+                await self._apply_policy_from_config(policy_config)
+            except Exception as e:
+                await self._observability_manager.log(
+                    level="ERROR",
+                    message="Failed to apply policy configuration",
+                    context={
+                        "policy_config": policy_config,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    },
+                )
+
+        # Note: Providers from config are metadata only - adapters must be registered
+        # programmatically via register_provider()
+
+    async def _apply_policy_from_config(self, policy_config: dict[str, Any]) -> None:
+        """Apply a policy from configuration.
+
+        Args:
+            policy_config: Policy configuration dictionary.
+        """
+        try:
+            policy_id = policy_config.get("policy_id")
+            if not policy_id:
+                raise ValueError("Policy configuration missing 'policy_id'")
+
+            # Convert policy config to Policy model
+            policy = Policy(
+                id=policy_id,
+                name=policy_config.get("name", policy_id),
+                type=PolicyType(policy_config.get("type", "routing")),
+                scope=PolicyScope(policy_config.get("scope", "global")),
+                scope_id=policy_config.get("scope_id"),
+                rules=policy_config.get("rules", {}),
+                priority=policy_config.get("priority", 0),
+                enabled=policy_config.get("enabled", True),
+            )
+
+            # Store policy
+            self._policies[policy_id] = policy
+
+            await self._observability_manager.log(
+                level="INFO",
+                message="Policy applied from configuration",
+                context={
+                    "policy_id": policy_id,
+                    "policy_name": policy.name,
+                    "policy_type": policy.type.value,
+                },
+            )
+
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Invalid policy configuration: {e}") from e
+
+    async def update_policy_from_config(
+        self, policy_id: str, policy_config: dict[str, Any]
+    ) -> Policy:
+        """Update a policy from ConfigurationManager.
+
+        Updates a policy configuration and applies it immediately without restart.
+
+        Args:
+            policy_id: Policy identifier to update.
+            policy_config: Policy configuration dictionary.
+
+        Returns:
+            Updated Policy instance.
+
+        Raises:
+            ValueError: If ConfigurationManager is not configured or policy is invalid.
+            ConfigurationError: If policy update fails.
+        """
+        if self._configuration_manager is None:
+            raise ValueError("ConfigurationManager is not configured")
+
+        try:
+            # Update policy in ConfigurationManager
+            updated_config = await self._configuration_manager.update_policy(
+                policy_id, policy_config
+            )
+
+            # Apply policy to router
+            await self._apply_policy_from_config(updated_config)
+
+            # Return the Policy instance
+            return self._policies[policy_id]
+
+        except ConfigurationError:
+            raise
+        except Exception as e:
+            raise ConfigurationError(f"Failed to update policy: {e}") from e
+
+    async def update_key_from_config(
+        self, key_id: str, key_config: dict[str, Any]
+    ) -> APIKey:
+        """Update a key configuration from ConfigurationManager.
+
+        Updates a key configuration and applies it immediately without restart.
+        Note: This will re-register the key with new material/metadata.
+
+        Args:
+            key_id: Key identifier to update.
+            key_config: Key configuration dictionary.
+
+        Returns:
+            Updated APIKey instance.
+
+        Raises:
+            ValueError: If ConfigurationManager is not configured or key is invalid.
+            ConfigurationError: If key update fails.
+        """
+        if self._configuration_manager is None:
+            raise ValueError("ConfigurationManager is not configured")
+
+        try:
+            # Update key in ConfigurationManager
+            updated_config = await self._configuration_manager.update_key_config(
+                key_id, key_config
+            )
+
+            # Apply key update to router
+            key_material = updated_config.get("key_material")
+            provider_id = updated_config.get("provider_id")
+            metadata = updated_config.get("metadata", {})
+
+            if not key_material or not provider_id:
+                raise ValueError("Key configuration missing required fields")
+
+            # Re-register key (this will update it)
+            # Note: KeyManager doesn't have update, so we re-register
+            api_key = await self.register_key(
+                key_material=key_material,
+                provider_id=provider_id,
+                metadata=metadata,
+            )
+
+            return api_key
+
+        except ConfigurationError:
+            raise
+        except Exception as e:
+            raise ConfigurationError(f"Failed to update key: {e}") from e
+
+    def get_policy(self, policy_id: str) -> Policy | None:
+        """Get a policy by ID.
+
+        Args:
+            policy_id: Policy identifier.
+
+        Returns:
+            Policy instance if found, None otherwise.
+        """
+        return self._policies.get(policy_id)
+
+    def get_policies(self) -> list[Policy]:
+        """Get all policies.
+
+        Returns:
+            List of all Policy instances.
+        """
+        return list(self._policies.values())
 
     def _get_alternative_key(
         self,

@@ -2,7 +2,7 @@
 Dependency injection setup for the ApiKeyRouter Proxy.
 """
 
-from functools import lru_cache
+from functools import cache
 
 from apikeyrouter.domain.components.key_manager import KeyManager
 from apikeyrouter.domain.interfaces.observability_manager import ObservabilityManager
@@ -13,19 +13,19 @@ from apikeyrouter.infrastructure.observability.logger import (
 from apikeyrouter.infrastructure.state_store.memory_store import InMemoryStateStore
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_state_store() -> StateStore:
     """Get a singleton instance of the StateStore."""
     return InMemoryStateStore()
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_observability_manager() -> ObservabilityManager:
     """Get a singleton instance of the ObservabilityManager."""
     return DefaultObservabilityManager()
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_key_manager(
     state_store: StateStore,
     observability_manager: ObservabilityManager,

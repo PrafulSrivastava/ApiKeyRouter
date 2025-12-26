@@ -17,6 +17,8 @@ beanie = "^1.23.0"
 redis = {extras = ["asyncio"], version = "^5.0.0"}
 cryptography = "^42.0.0"
 typing-extensions = "^4.9.0"
+pyyaml = "^6.0.0"
+watchdog = "^3.0.0"
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv", "htmlcov", "__pycache__", ".pytest_cache"]
