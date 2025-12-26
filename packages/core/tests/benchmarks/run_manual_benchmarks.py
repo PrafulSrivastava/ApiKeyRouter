@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Coroutine
+from collections.abc import Coroutine
 
 from apikeyrouter.domain.components.key_manager import KeyManager
 from apikeyrouter.domain.components.quota_awareness_engine import QuotaAwarenessEngine
@@ -60,7 +60,7 @@ async def run_and_time_async(description: str, coro: Coroutine):
     result = await coro
     end_time = time.monotonic()
     duration_ms = (end_time - start_time) * 1000
-    print(f"Result: OK")
+    print("Result: OK")
     print(f"Total Duration: {duration_ms:.2f} ms")
     return result
 
@@ -97,7 +97,7 @@ async def benchmark_failover_routing(engine: RoutingEngine, good_key: APIKey):
     assert result.selected_key_id == good_key.id
 
 
-async def benchmark_aged_history_routing(engine: RoutingEngine, keys: List[APIKey]):
+async def benchmark_aged_history_routing(engine: RoutingEngine, keys: list[APIKey]):
     """Benchmark fairness with a large history."""
     state_store = engine._state_store
     objective = RoutingObjective(primary=ObjectiveType.Fairness.value)
@@ -109,7 +109,7 @@ async def benchmark_aged_history_routing(engine: RoutingEngine, keys: List[APIKe
         await state_store.log_decision(
             f"req-hist-{i}", key_id_for_log, "routed", ObjectiveType.Fairness.value
         )
-    
+
     await run_and_time_async(
         "Single route with 10k history",
         engine.route_request(
@@ -143,7 +143,7 @@ async def main():
         "Failover routing (1 good key in 1000)",
         benchmark_failover_routing(failover_engine, the_one_good_key),
     )
-    
+
     # --- Aged History Test ---
     aged_engine, aged_keys = await setup_engine(num_keys=1000)
     await benchmark_aged_history_routing(aged_engine, aged_keys)

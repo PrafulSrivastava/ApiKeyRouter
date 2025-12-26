@@ -1,6 +1,7 @@
 """Performance benchmarks for concurrent routing scenarios."""
 
 import asyncio
+
 import pytest
 
 from apikeyrouter.domain.components.key_manager import KeyManager

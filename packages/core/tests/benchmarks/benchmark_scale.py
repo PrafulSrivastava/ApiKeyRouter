@@ -1,12 +1,17 @@
 """Performance benchmarks for large-scale routing scenarios."""
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from apikeyrouter.domain.components.key_manager import KeyManager
 from apikeyrouter.domain.components.quota_awareness_engine import QuotaAwarenessEngine
 from apikeyrouter.domain.components.routing_engine import RoutingEngine
-from apikeyrouter.domain.models.routing_decision import ObjectiveType, RoutingObjective, RoutingDecision
+from apikeyrouter.domain.models.routing_decision import (
+    ObjectiveType,
+    RoutingDecision,
+    RoutingObjective,
+)
 from apikeyrouter.infrastructure.observability.logger import DefaultObservabilityManager
 from apikeyrouter.infrastructure.state_store.memory_store import InMemoryStateStore
 
@@ -96,7 +101,7 @@ async def test_benchmark_aged_fairness_routing(
             explanation="benchmark setup",
             confidence=1.0,
             decision_timestamp=datetime.utcnow(),
-			status="routed"
+            status="routed"
         )
         await state_store.save_routing_decision(decision)
 
