@@ -10,7 +10,7 @@ dynamic = ["dependencies", "optional-dependencies"]
 name = "apikeyrouter-meta"
 version = "0.0.1"
 description = "Meta package to bundle core/proxy"
-package-mode = false
+authors = ["Your Name <you@example.com>"]
 
 
 [tool.poetry.dependencies]
